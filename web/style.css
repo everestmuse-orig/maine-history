@@ -76,6 +76,59 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.time-section {
+  background: #f5f1e6;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 0.9rem;
+}
+
+.time-section h2 { border-bottom-color: #b45309; }
+
+.time-controls { font-family: -apple-system, 'Segoe UI', sans-serif; }
+
+#time-slider {
+  width: 100%;
+  accent-color: #b45309;
+  margin: 0.4rem 0 0.2rem;
+  cursor: pointer;
+}
+
+.time-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
+}
+
+.time-year {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.time-era {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b45309;
+}
+
+.time-desc {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0.3rem 0;
+  color: var(--ink);
+}
+
+.time-sources {
+  font-size: 0.72rem;
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+}
+
+.time-sources a { color: var(--accent); }
+
 .panel-section h2 {
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -244,4 +297,30 @@ body {
   .panel-toggle { display: block; }
 
   .map-wrap { min-height: 55vh; }
+}
+
+/* Beyond-the-map list (sites with no single mappable location) */
+.offmap-list { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.offmap-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
+  background: var(--paper);
+}
+
+.offmap-head { display: flex; align-items: center; gap: 0.5rem; }
+
+.offmap-name { font-weight: 700; font-size: 0.9rem; }
+
+.offmap-date {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0.25rem 0 0.4rem;
+}
+
+.offmap-summary {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0 0 0.5rem;
 }

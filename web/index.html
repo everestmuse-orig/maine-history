@@ -20,10 +20,29 @@
 
 <div class="layout">
   <aside id="side-panel" class="side-panel" aria-label="Map filters and legend">
+    <section class="panel-section time-section">
+      <h2>Time slider</h2>
+      <p class="hint">Drag to see historically accurate territorial borders for that date.</p>
+      <div class="time-controls">
+        <input type="range" id="time-slider" min="1500" max="2026" step="1" value="2026"
+               aria-label="Select a year to view territorial borders">
+        <div class="time-readout">
+          <span id="time-year" class="time-year">2026</span>
+          <span id="time-era" class="time-era"></span>
+        </div>
+        <p id="time-desc" class="time-desc"></p>
+        <p id="time-sources" class="time-sources"></p>
+      </div>
+    </section>
     <section class="panel-section">
       <h2>Eras &amp; conflicts</h2>
       <p class="hint">Show or hide sites by era.</p>
       <div id="era-list" class="era-list"></div>
+    </section>
+    <section class="panel-section">
+      <h2>Beyond the map</h2>
+      <p class="hint">Important history with no single mappable location — shown here instead of as a marker.</p>
+      <div id="offmap-list" class="offmap-list"></div>
     </section>
     <section class="panel-section">
       <h2>Settlement shading</h2>
@@ -38,7 +57,9 @@
       <h2>About</h2>
       <p class="hint">Each marker links to its Wikipedia article for deeper reading.
       Settlement shading shows where colonists were actually settled versus
-      territory considered out of their control at the time.</p>
+      territory that remained under Indigenous control or was disputed at the time.
+      Use the time slider above to see who controlled the territory on any date —
+      note that Maine was part of Massachusetts from 1658 until statehood in 1820.</p>
     </section>
   </aside>
 
