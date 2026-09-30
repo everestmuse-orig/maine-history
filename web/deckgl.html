@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maine Historical Atlas — deck.gl</title>
+<meta name="description" content="Interactive map of Maine history on deck.gl: territorial boundaries 1500–2026, 58 historical sites, settlement extents.">
+<style>
+  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: #1c1917; }
+  body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  .app-header { background: #1c1917; color: #fafaf9; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+  .app-header h1 { font-size: 18px; margin: 0; }
+  .app-header .tagline { margin: 2px 0 0; font-size: 12px; color: #d6d3d1; }
+  .panel-toggle { margin-left: auto; background: #44403c; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  .layout { flex: 1; display: flex; min-height: 0; }
+  #side-panel { width: 340px; max-width: 86vw; flex: none; overflow-y: auto; background: #fafaf9; border-right: 1px solid #e7e5e4; padding: 14px 16px 24px; }
+  #side-panel.collapsed { display: none; }
+  .panel-section { margin-bottom: 20px; }
+  .panel-section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 8px; color: #57534e; }
+  .hint { font-size: 12px; color: #78716c; margin: 0 0 8px; line-height: 1.45; }
+  #time-slider { width: 100%; }
+  .time-readout { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 6px 0; }
+  #time-year { font-size: 24px; font-weight: 700; }
+  #time-era { font-size: 12px; font-weight: 600; color: #44403c; text-align: right; }
+  #time-desc { font-size: 13px; line-height: 1.5; color: #44403c; max-height: 160px; overflow: auto; margin: 0 0 6px; }
+  #time-sources { font-size: 11px; margin: 0 0 6px; line-height: 1.5; }
+  #time-sources a { color: #1d4ed8; }
+  #visible-count { font-size: 12px; color: #57534e; margin: 8px 0 0; }
+  .era-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; cursor: pointer; }
+  .era-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.25); }
+  .era-label { flex: 1; }
+  .era-count { font-size: 11px; color: #78716c; white-space: nowrap; }
+  .offmap-item { border-top: 1px solid #e7e5e4; padding: 8px 0; }
+  .offmap-head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+  .offmap-date { font-size: 11px; color: #78716c; margin: 2px 0; }
+  .offmap-item p { margin: 4px 0; font-size: 12px; color: #44403c; line-height: 1.45; }
+  .offmap-item a { font-size: 12px; color: #1d4ed8; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 8px 0; cursor: pointer; }
+  #shading-legend { list-style: none; margin: 8px 0 0; padding: 0; font-size: 12px; }
+  #shading-legend li { margin: 4px 0; color: #57534e; }
+  .swatch { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: baseline; opacity: .85; }
+  .map-wrap { flex: 1; position: relative; min-width: 0; background: #dde3ea; }
+  #map { position: absolute; inset: 0; }
+  #map-status { position: absolute; left: 10px; bottom: 26px; background: rgba(255,255,255,.88); padding: 4px 10px; border-radius: 6px; font-size: 11px; color: #57534e; z-index: 5; max-width: calc(100% - 20px); }
+  #attrib { position: absolute; right: 8px; bottom: 6px; font-size: 11px; color: #555; background: rgba(255,255,255,.7); padding: 2px 6px; border-radius: 4px; z-index: 5; }
+  #attrib a { color: #555; }
+  #popup { position: absolute; z-index: 10; width: 290px; max-width: calc(100% - 20px); background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.3); padding: 12px 14px; font-size: 13px; }
+  #popup h3 { margin: 4px 0; font-size: 15px; }
+  .popup-kind { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #78716c; }
+  .popup-era { font-size: 12px; color: #57534e; margin: 2px 0 6px; }
+  #popup p { line-height: 1.45; color: #44403c; margin: 6px 0; }
+  #popup a { color: #1d4ed8; font-size: 12px; }
+  .popup-close { position: absolute; top: 4px; right: 10px; border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: #78716c; }
+  .app-footer { font-size: 11px; color: #78716c; text-align: center; padding: 6px 10px; background: #fafaf9; border-top: 1px solid #e7e5e4; }
+</style>
+<!--
+  deck.gl loads as one UMD bundle (global `deck`) — no import map needed. This is
+  the most compatible loading method: the ESM import-map build silently failed to
+  initialize in some in-app/mobile browsers, leaving a working slider over a blank
+  canvas. All atlas data is inlined below, so this file works from file:// too.
+-->
+<script src="https://cdn.jsdelivr.net/npm/deck.gl@9.1.0/dist.min.js"></script>
+</head>
+<body>
+<header class="app-header">
+  <div>
+    <h1>Maine Historical Atlas</h1>
+    <p class="tagline">Every conflict, every era — from the discovery of Casco Bay to modern day.</p>
+  </div>
+  <button id="panel-toggle" class="panel-toggle" aria-expanded="true" aria-controls="side-panel">Filters</button>
+</header>
+<div class="layout">
+  <aside id="side-panel" aria-label="Map filters and legend">
+    <section class="panel-section">
+      <h2>Time slider</h2>
+      <p class="hint">Drag to see historically accurate territorial borders for that date. Whole-year granularity: 1783 &rarr; Massachusetts era, 1820 &rarr; Treaty of Paris dispute era, 1842 &rarr; disputed-north era.</p>
+      <input type="range" id="time-slider" min="1500" max="2026" step="1" value="2026" aria-label="Select a year">
+      <div class="time-readout"><span id="time-year">2026</span><span id="time-era"></span></div>
+      <p id="time-desc"></p>
+      <p id="time-sources"></p>
+      <p id="visible-count"></p>
+    </section>
+    <section class="panel-section">
+      <h2>Eras &amp; conflicts</h2>
+      <p class="hint">Show or hide sites by era.</p>
+      <div id="era-list"></div>
+    </section>
+    <section class="panel-section">
+      <h2>Beyond the map</h2>
+      <p class="hint">Important history with no single mappable location &mdash; shown here instead of as a marker.</p>
+      <div id="offmap-list"></div>
+    </section>
+    <section class="panel-section">
+      <h2>Overlays</h2>
+      <label class="toggle-row"><input type="checkbox" id="shading-checkbox" checked> Settlement extents</label>
+      <label class="toggle-row"><input type="checkbox" id="labels-checkbox" checked> Site labels</label>
+      <ul id="shading-legend"></ul>
+      <p class="hint">Extents are approximate reconstructions, not precise boundaries.</p>
+    </section>
+    <section class="panel-section">
+      <h2>About</h2>
+      <p class="hint">Each marker links to its Wikipedia article for deeper reading. Settlement shading shows where colonists were actually settled versus territory that remained under Indigenous control or was disputed at the time. Maine was part of Massachusetts from 1658 until statehood in 1820.</p>
+    </section>
+  </aside>
+  <main class="map-wrap">
+    <div id="map"></div>
+    <div id="popup" hidden></div>
+    <div id="map-status">Loading map&hellip;</div>
+    <div id="attrib">&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors</div>
+  </main>
+</div>
+<footer class="app-footer">Coordinates and summaries verified against sources &middot; Settlement extents approximate &middot; <span id="stats"></span></footer>
+
+<script>
+(function () {
+'use strict';
+
+// Status line: if the map library or WebGL fails, this says so instead of
+// leaving a silent blank canvas.
+var statusEl = document.getElementById('map-status');
+function setStatus(msg) { statusEl.textContent = msg; }
+
+if (typeof window.deck === 'undefined') {
+  setStatus('Could not load the deck.gl library \u2014 check your network connection and reload.');
+  return;
+}
+var deckNs = window.deck;
+var Deck = deckNs.Deck;
+var MapView = deckNs.MapView;
+var ScatterplotLayer = deckNs.ScatterplotLayer;
+var GeoJsonLayer = deckNs.GeoJsonLayer;
+var TextLayer = deckNs.TextLayer;
+var BitmapLayer = deckNs.BitmapLayer;
+var TileLayer = deckNs.TileLayer;
+
+// ---------------------------------------------------------------------------
+// Data: the real atlas files, inlined so this single file works from file://.
+// ---------------------------------------------------------------------------
+var SITES = {
+  "eras": [
+    {
+      "color": "#8b6f47",
+      "end_year": 1613,
+      "id": "age-of-exploration",
+      "label": "Age of Exploration (c. 1500–1613)",
+      "start_year": 1500,
+      "summary": "European sailors charted the Maine coast in the early 1500s: Giovanni da Verrazzano sailed it in 1524 and Estêvão Gomes mapped it in 1525. Samuel de Champlain's surveys of 1604–05 named landmarks including Mount Desert Island. The era closes with the first permanent French and English settlement attempts at Saint Croix Island (1604) and Popham (1607)."
+    },
+    {
+      "id": "wabanaki-heritage",
+      "label": "Wabanaki Heritage",
+      "start_year": null,
+      "end_year": null,
+      "color": "#7c3aed",
+      "summary": "The Wabanaki peoples — Mi'kmaq, Wolastoqiyik (Maliseet), Passamaquoddy, Penobscot, and Abenaki — have called this land Wabanaki, 'Dawnland,' since time immemorial. This era gathers pre-contact cultures, the Wabanaki Confederacy, colonial-era treaties and conflicts involving the Dawnland nations, and the modern tribal sovereignty movement."
+    },
+    {
+      "color": "#5f7a5a",
+      "end_year": 1675,
+      "id": "early-settlement",
+      "label": "Early Settlement (1614–1675)",
+      "start_year": 1614,
+      "summary": "English fishing stations, fur-trading posts, and small coastal towns — York, Casco (Falmouth Neck), Pemaquid — grew along the Maine coast, while the French held the fortified trading post of Pentagoet at Castine. Settlements were small, scattered, and depended on trade with the Wabanaki. Growth halted in 1675 with the outbreak of King Philip's War."
+    },
+    {
+      "color": "#a3543c",
+      "end_year": 1678,
+      "id": "king-philips-war",
+      "label": "King Philip's War (1675–1678)",
+      "start_year": 1675,
+      "summary": "The war spread into Maine in 1676 with Wabanaki raids on English settlements from York to Pemaquid, culminating in the Northeast Coast campaigns of 1676–77. Black Point (Scarborough) was attacked twice and Fort Pemaquid destroyed; the fighting ended with the Treaty of Casco in 1678."
+    },
+    {
+      "color": "#4a5d70",
+      "end_year": 1697,
+      "id": "king-williams-war",
+      "label": "King William's War (1688–1697)",
+      "start_year": 1688,
+      "summary": "The first of the French and Indian Wars pitted English Massachusetts Bay against New France and its Wabanaki allies in Maine. French and Native forces destroyed Fort Loyal at Falmouth Neck (1690), raided York (1692), and captured Fort William Henry at Pemaquid (1696), nearly depopulating the English frontier."
+    },
+    {
+      "color": "#8B5A2B",
+      "end_year": 1713,
+      "id": "queen-annes-war",
+      "label": "Queen Anne's War (1702–1713)",
+      "start_year": 1702,
+      "summary": "The North American theater of the War of the Spanish Succession, fought between Britain and France with Native allies. French and Wabanaki forces struck English settlements along the Maine coast, while British campaigns targeted Acadia. The 1713 Treaty of Utrecht ended the war and ceded peninsular Acadia to Britain."
+    },
+    {
+      "color": "#A0522D",
+      "end_year": 1725,
+      "id": "dummers-war",
+      "label": "Dummer's War (1722–1725)",
+      "start_year": 1722,
+      "summary": "A conflict between New England and the Wabanaki Confederacy, sparked by English settlement expansion along the Kennebec River after Queen Anne's War. French Jesuit missionaries encouraged Abenaki resistance, and the English responded by building frontier forts and launching the 1724 raid that destroyed Norridgewock."
+    },
+    {
+      "color": "#556B2F",
+      "end_year": 1748,
+      "id": "king-georges-war",
+      "label": "King George's War (1744–1748)",
+      "start_year": 1744,
+      "summary": "The North American theater of the War of the Austrian Succession. After New England forces captured the French fortress of Louisbourg in 1745, the Wabanaki retaliated with raids on the Maine frontier. The war ended with the Treaty of Aix-la-Chapelle, which returned Louisbourg to France."
+    },
+    {
+      "color": "#2F4F4F",
+      "end_year": 1763,
+      "id": "french-indian-war",
+      "label": "French and Indian War (1754–1763)",
+      "start_year": 1754,
+      "summary": "The North American theater of the Seven Years' War, pitting Britain against France and their respective Native allies. Massachusetts built a chain of forts up the Kennebec and along the coast to secure the Maine frontier. Britain's victory ended French rule in North America with the 1763 Treaty of Paris."
+    },
+    {
+      "color": "#7c2d12",
+      "end_year": 1783,
+      "id": "revolutionary-war",
+      "label": "Revolutionary War (1775–1783)",
+      "start_year": 1775,
+      "summary": "Maine was the northeastern frontier of the Revolution, then the District of Maine under Massachusetts. Coastal towns saw naval raids and British attacks, including the burning of Falmouth and the disastrous Penobscot Expedition. A fort on the Kennebec served as the launch point for Benedict Arnold's 1775 march to Quebec."
+    },
+    {
+      "color": "#9a5b3c",
+      "end_year": 1815,
+      "id": "war-of-1812",
+      "label": "War of 1812 (1812–1815)",
+      "start_year": 1812,
+      "summary": "During the War of 1812, Britain raided Maine's coast and briefly occupied eastern Maine as the colony of 'New Ireland.' The American frigate USS Adams was destroyed at Hampden, and the Enterprise captured HMS Boxer off Pemaquid Point. The defeat at Hampden and the occupation helped fuel the movement for Maine statehood."
+    },
+    {
+      "color": "#5F6F52",
+      "end_year": 1860,
+      "id": "early-statehood",
+      "label": "Early Statehood (1820–1860)",
+      "start_year": 1820,
+      "summary": "Maine became a state in 1820 under the Missouri Compromise. The new state built its capitol in Augusta and faced a bloodless border crisis with Britain in the Aroostook War, which the 1842 Webster–Ashburton Treaty settled by fixing Maine's northern border. Maine also passed the nation's first statewide prohibition law in 1851."
+    },
+    {
+      "color": "#7A3E2E",
+      "end_year": 1865,
+      "id": "civil-war",
+      "label": "Civil War (1861–1865)",
+      "start_year": 1861,
+      "summary": "Maine sent more soldiers per capita to the Union army than any other state. Its 20th Maine Volunteer Infantry became famous at Gettysburg under Brewer-born Joshua Chamberlain. Meanwhile, granite forts were built or completed to guard Maine's harbors, including Fort Gorges in Portland Harbor."
+    },
+    {
+      "color": "#6b7280",
+      "end_year": 1919,
+      "id": "industrial-era",
+      "label": "Industrial Era (1860–1919)",
+      "start_year": 1860,
+      "summary": "Maine's timber, textile, and shipbuilding industries boomed after the Civil War, drawing French-Canadian mill workers to Lewiston and other mill towns. The Great Fire of 1866 rebuilt Portland in brick and stone, while iron shipyards at Bath and Kittery laid the groundwork for a century of naval construction."
+    },
+    {
+      "color": "#1f2937",
+      "end_year": 1945,
+      "id": "world-wars",
+      "label": "World Wars (1914–1945)",
+      "start_year": 1914,
+      "summary": "Maine shipyards launched destroyers and submarines for both world wars, and the coast bristled with naval air stations and coastal defenses. The sinking of the submarine USS Squalus off the Isles of Shoals in 1939 — and the daring rescue of 33 survivors — remains one of the Navy's most famous peacetime disasters."
+    },
+    {
+      "color": "#1e3a8a",
+      "end_year": 1991,
+      "id": "cold-war",
+      "label": "Cold War (1945–1991)",
+      "start_year": 1945,
+      "summary": "Strategic Air Command bombers stood nuclear alert at Loring AFB in Limestone, one of the closest U.S. bases to the Soviet Union, while Dow AFB in Bangor hosted interceptors and BOMARC missiles. Bath Iron Works built the Navy's guided-missile destroyers through the era's end."
+    },
+    {
+      "color": "#0d9488",
+      "end_year": 2026,
+      "id": "modern",
+      "label": "Modern Maine (1991–present)",
+      "start_year": 1991,
+      "summary": "After the Cold War bases closed, Maine reinvented itself around conservation, tourism, and civic firsts. Voters made Maine the first state to adopt ranked-choice voting in 2016, and the same year Katahdin Woods and Waters joined Acadia as a national monument."
+    }
+  ],
+  "sites": [
+    {
+      "id": "casco-bay-discovery",
+      "name": "Casco Bay — first European sightings",
+      "lat": 43.65,
+      "lng": -70.05,
+      "era": "age-of-exploration",
+      "start_year": 1524,
+      "end_year": 1525,
+      "kind": "discovery",
+      "summary": "European ships reached the Maine coast in the early 1500s: Giovanni da Verrazzano sailed along it in 1524, and Portuguese explorer Estêvão Gomes mapped the coast in 1525. The name 'Casco' reportedly derives either from the Abenaki 'Aucocisco' (place of herons / marshy place) or from Gomes's 'Bahía de Cascos' (Bay of Helmets).",
+      "wikipedia": "https://en.wikipedia.org/wiki/Casco_Bay",
+      "tags": [
+        "casco-bay",
+        "exploration",
+        "verrazzano"
+      ]
+    },
+    {
+      "id": "saint-croix-island-1604",
+      "name": "Saint Croix Island (1604)",
+      "lat": 45.12833,
+      "lng": -67.13306,
+      "era": "age-of-exploration",
+      "start_year": 1604,
+      "end_year": 1605,
+      "kind": "settlement",
+      "summary": "In 1604 Pierre Dugua, Sieur de Mons, established a French winter settlement on this island in the Saint Croix River, with Samuel de Champlain among the expedition. The winter of 1604–05 was cruel: 35 of the 79 men died, and the survivors moved on by summer, though the attempt marked the beginning of the French presence in North America.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Saint_Croix_Island,_Maine",
+      "tags": [
+        "champlain",
+        "french",
+        "settlement"
+      ]
+    },
+    {
+      "id": "mount-desert-island",
+      "name": "Mount Desert Island",
+      "lat": 44.34283,
+      "lng": -68.30714,
+      "era": "age-of-exploration",
+      "start_year": 1604,
+      "end_year": 1604,
+      "kind": "discovery",
+      "summary": "Samuel de Champlain sighted this island in 1604 and named it 'Isle des Monts Deserts' (Island of the Desert Mountains) for its bare, rounded summits. It is the largest island on the Maine coast and today lies partly within Acadia National Park.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Mount_Desert_Island",
+      "tags": [
+        "champlain",
+        "exploration",
+        "discovery"
+      ]
+    },
+    {
+      "id": "popham-colony",
+      "name": "Popham Colony / Fort St. George (1607)",
+      "lat": 43.7532,
+      "lng": -69.7884,
+      "era": "early-settlement",
+      "start_year": 1607,
+      "end_year": 1608,
+      "kind": "settlement",
+      "summary": "Founded in 1607 at the mouth of the Kennebec River by the Virginia Company of Plymouth, this was the second English colony in New England, contemporaneous with Jamestown. Its colonists built the Virginia of Sagadahoc, the first ocean-going ship constructed in English America, before abandoning the colony after one harsh winter in 1608.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Popham_Colony",
+      "tags": [
+        "kennebec",
+        "english",
+        "settlement"
+      ]
+    },
+    {
+      "id": "pentagoet",
+      "name": "Pentagoet (Castine)",
+      "lat": 44.38472,
+      "lng": -68.80361,
+      "era": "early-settlement",
+      "start_year": 1635,
+      "end_year": 1674,
+      "kind": "settlement",
+      "summary": "A fortified French fur-trading post at Castine, center of trade with the local Abenaki from 1635 to 1654 and the effective western border of Acadia. It later passed through English hands and became the base of the Baron de Saint-Castin before being destroyed by Dutch raiders in 1674. The site is now a National Historic Landmark District.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Pentagoet_Archeological_District",
+      "tags": [
+        "castine",
+        "french",
+        "fur-trade"
+      ]
+    },
+    {
+      "id": "york-settlement",
+      "name": "York (Old York)",
+      "lat": 43.16182,
+      "lng": -70.64784,
+      "era": "early-settlement",
+      "start_year": 1630,
+      "end_year": 1630,
+      "kind": "settlement",
+      "summary": "An early English settlement on the York River, founded in the 1630s and chartered in the 1640s, long known as 'Old York.' It became one of the most important towns of the Province of Maine and the site of repeated conflict during the colonial wars.",
+      "wikipedia": "https://en.wikipedia.org/wiki/York,_Maine",
+      "tags": [
+        "york",
+        "english",
+        "settlement"
+      ]
+    },
+    {
+      "id": "falmouth-neck-settlement",
+      "name": "Falmouth Neck (Portland)",
+      "lat": 43.6614,
+      "lng": -70.2553,
+      "era": "early-settlement",
+      "start_year": 1632,
+      "end_year": 1632,
+      "kind": "settlement",
+      "summary": "The peninsula of present-day Portland was first colonized by the English in 1632 as a fishing and trading village called Casco. When Massachusetts Bay absorbed the Province of Maine in 1658, the town's name changed to Falmouth.",
+      "wikipedia": "https://en.wikipedia.org/wiki/History_of_Portland,_Maine",
+      "tags": [
+        "portland",
+        "falmouth",
+        "settlement"
+      ]
+    },
+    {
+      "id": "pemaquid-settlement",
+      "name": "Pemaquid (Bristol)",
+      "lat": 43.87806,
+      "lng": -69.52139,
+      "era": "early-settlement",
+      "start_year": 1610,
+      "end_year": 1676,
+      "kind": "settlement",
+      "summary": "An early English settlement, fishing, and fur-trading station near Pemaquid Beach, Bristol, established around 1610. It became a major regional flashpoint in the late-17th-century conflicts between English and French settlers and between settlers and the Wabanaki; its village and fortifications are now an archaeological site.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Colonial_Pemaquid_State_Historic_Site",
+      "tags": [
+        "pemaquid",
+        "english",
+        "settlement"
+      ]
+    },
+    {
+      "id": "black-point-1676",
+      "name": "Attack on Black Point (1676)",
+      "lat": 43.57666,
+      "lng": -70.31926,
+      "era": "king-philips-war",
+      "start_year": 1676,
+      "end_year": 1676,
+      "kind": "battle",
+      "summary": "On October 12, 1676, during the Northeast Coast campaign, Wabanaki forces led by Chief Mogg (Mogg Hegon) laid siege to the garrison at Black Point (present-day Scarborough), then the easternmost English settlement. The garrison was abandoned by the colonists the same day.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Northeast_Coast_campaign_(1676)",
+      "tags": [
+        "scarborough",
+        "mogg",
+        "raid"
+      ]
+    },
+    {
+      "id": "pemaquid-destroyed-1676",
+      "name": "Destruction of Fort Pemaquid (1676)",
+      "lat": 43.87806,
+      "lng": -69.52139,
+      "era": "king-philips-war",
+      "start_year": 1676,
+      "end_year": 1676,
+      "kind": "battle",
+      "summary": "During the 1676 Northeast Coast campaign, Wabanaki forces destroyed Fort Pemaquid, the English fortification guarding the fishing and trading settlement. The campaign swept the Maine frontier from York eastward during King Philip's War.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Northeast_Coast_campaign_(1676)",
+      "tags": [
+        "pemaquid",
+        "raid",
+        "fort"
+      ]
+    },
+    {
+      "id": "fort-william-henry",
+      "name": "Fort William Henry (1692–1696)",
+      "lat": 43.8775,
+      "lng": -69.52472,
+      "era": "king-williams-war",
+      "start_year": 1692,
+      "end_year": 1696,
+      "kind": "fort",
+      "summary": "Built by Massachusetts in 1692 at Pemaquid, it was in its time the largest English fort in New England. In 1696 it was captured and destroyed by French forces under Pierre Le Moyne d'Iberville during the Siege of Pemaquid. A reconstruction was built in 1908 and is now part of Colonial Pemaquid State Historic Site.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_William_Henry_(Maine)",
+      "tags": [
+        "pemaquid",
+        "fort",
+        "siege"
+      ]
+    },
+    {
+      "id": "candlemas-massacre",
+      "name": "Candlemas Massacre, York (1692)",
+      "lat": 43.16182,
+      "lng": -70.64784,
+      "era": "king-williams-war",
+      "start_year": 1692,
+      "end_year": 1692,
+      "kind": "battle",
+      "summary": "On January 24, 1692 — Candlemas Day — French-allied Wabanaki under Chief Madockawando raided York, killing dozens of settlers including Rev. Shubael Dummer, burning buildings, and carrying many captives to New France. The settlement was later rebuilt on higher ground at what is today York Village.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Raid_on_York_(1692)",
+      "tags": [
+        "york",
+        "raid",
+        "wabanaki"
+      ]
+    },
+    {
+      "id": "battle-of-falmouth-1690",
+      "name": "Battle of Falmouth (1690)",
+      "lat": 43.66087,
+      "lng": -70.25025,
+      "era": "king-williams-war",
+      "start_year": 1690,
+      "end_year": 1690,
+      "kind": "battle",
+      "summary": "From May 16–20, 1690, French and Wabanaki forces under Hertel de la Fresnière and the Baron de Saint-Castin besieged Fort Loyal on Falmouth Neck (present-day Portland). The fort surrendered and the settlement was burned; Portland's peninsula was largely deserted for more than ten years.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Battle_of_Falmouth_(1690)",
+      "tags": [
+        "portland",
+        "falmouth",
+        "siege"
+      ]
+    },
+    {
+      "id": "northeast-coast-campaign-1703",
+      "name": "Northeast Coast campaign (1703)",
+      "lat": 43.33139,
+      "lng": -70.61333,
+      "era": "queen-annes-war",
+      "start_year": 1703,
+      "end_year": 1703,
+      "kind": "battle",
+      "summary": "The first major campaign of Queen Anne's War in New England, running August 10 to October 6, 1703. French forces under Alexandre de Beaubassin and Wabanaki allies attacked English settlements along the Maine coast from Wells to Casco Bay, destroying and abandoning several settlements.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Northeast_Coast_Campaign_(1703)",
+      "tags": [
+        "raid",
+        "wabanaki",
+        "coast"
+      ]
+    },
+    {
+      "id": "northeast-coast-campaign-1712",
+      "name": "Northeast Coast campaign (1712)",
+      "lat": 43.16333,
+      "lng": -70.64861,
+      "era": "queen-annes-war",
+      "start_year": 1712,
+      "end_year": 1712,
+      "kind": "battle",
+      "summary": "Wabanaki raiding on Maine and New Hampshire frontier towns, including Kittery, Wells, Berwick, and York, during the spring and summer of 1712. The campaign was reportedly retaliation for the British capture of Port Royal in Acadia.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Northeast_Coast_campaign_(1712)",
+      "tags": [
+        "raid",
+        "wabanaki",
+        "coast"
+      ]
+    },
+    {
+      "id": "battle-norridgewock",
+      "name": "Battle of Norridgewock",
+      "lat": 44.769868,
+      "lng": -69.885768,
+      "era": "dummers-war",
+      "start_year": 1724,
+      "end_year": 1724,
+      "kind": "battle",
+      "summary": "On August 23, 1724, New England militiamen under Captains Moulton and Harmon attacked the Abenaki village of Norridgewock at Old Point, now part of Madison. The village was destroyed and the French Jesuit missionary Sébastien Rale was killed; survivors fled north to Quebec.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Battle_of_Norridgewock",
+      "tags": [
+        "raid",
+        "abenaki",
+        "kennebec"
+      ]
+    },
+    {
+      "id": "fort-st-george",
+      "name": "Fort St. George",
+      "lat": 44.07889,
+      "lng": -69.1825,
+      "era": "dummers-war",
+      "start_year": 1719,
+      "end_year": 1758,
+      "kind": "fort",
+      "summary": "A British colonial fort at present-day Thomaston on the St. George River, built in 1719-1720. It was attacked during Dummer's War, besieged for 30 days in 1723, attacked again in the 1745 Northeast Coast campaign, and targeted in a failed 1758 French expedition.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_St._George_(Thomaston,_Maine)",
+      "tags": [
+        "fort",
+        "thomaston",
+        "siege"
+      ]
+    },
+    {
+      "id": "fort-richmond",
+      "name": "Fort Richmond",
+      "lat": 44.09175,
+      "lng": -69.7855,
+      "era": "dummers-war",
+      "start_year": 1721,
+      "end_year": 1755,
+      "kind": "fort",
+      "summary": "A Massachusetts colonial fort built around 1721 on the western bank of the Kennebec River at present-day Richmond. It survived a 1722 siege during Father Rale's War and served as the staging point for the 1724 raid on Norridgewock; it was rebuilt in 1740 and dismantled in 1755.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_Richmond_(Maine)",
+      "tags": [
+        "fort",
+        "kennebec",
+        "siege"
+      ]
+    },
+    {
+      "id": "northeast-coast-campaign-1745",
+      "name": "Northeast Coast campaign (1745)",
+      "lat": 44.07889,
+      "lng": -69.1825,
+      "era": "king-georges-war",
+      "start_year": 1745,
+      "end_year": 1745,
+      "kind": "battle",
+      "summary": "From July 19 to September 5, 1745, the Wabanaki Confederacy retaliated for the British capture of Louisbourg by raiding Maine settlements from Berwick to St. George (Thomaston). Within two months there were 11 raids, with every frontier town reportedly attacked.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Northeast_Coast_campaign_(1745)",
+      "tags": [
+        "raid",
+        "wabanaki",
+        "coast"
+      ]
+    },
+    {
+      "id": "fort-frederick",
+      "name": "Fort Frederick (Pemaquid)",
+      "lat": 43.87806,
+      "lng": -69.52139,
+      "era": "king-georges-war",
+      "start_year": 1729,
+      "end_year": 1759,
+      "kind": "fort",
+      "summary": "Rebuilt in 1729-1730 by Colonel David Dunbar at Pemaquid on the ruins of Fort William Henry. During King George's War it was attacked in the 1745 Northeast Coast campaign and withstood two more attacks in 1747; it was decommissioned in 1759 during the French and Indian War.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_William_Henry_(Maine)",
+      "tags": [
+        "fort",
+        "pemaquid",
+        "siege"
+      ]
+    },
+    {
+      "id": "fort-halifax",
+      "name": "Fort Halifax",
+      "lat": 44.5396,
+      "lng": -69.6297,
+      "era": "french-indian-war",
+      "start_year": 1754,
+      "end_year": 1763,
+      "kind": "fort",
+      "summary": "Built in 1754-1755 at the confluence of the Sebasticook and Kennebec rivers at Winslow, guarding Wabanaki canoe routes toward the St. Lawrence and Penobscot valleys. Its surviving blockhouse is reportedly the oldest blockhouse in the United States.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_Halifax_(Maine)",
+      "tags": [
+        "fort",
+        "kennebec",
+        "blockhouse"
+      ]
+    },
+    {
+      "id": "fort-pownall",
+      "name": "Fort Pownall",
+      "lat": 44.46806,
+      "lng": -68.81278,
+      "era": "french-indian-war",
+      "start_year": 1759,
+      "end_year": 1775,
+      "kind": "fort",
+      "summary": "A British fortification built May-July 1759 at Fort Point in Stockton Springs, at the mouth of the Penobscot River, named for Governor Thomas Pownall. It never saw action during the war and was destroyed during the American Revolutionary War to keep it from British hands.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_Pownall",
+      "tags": [
+        "fort",
+        "penobscot",
+        "coast"
+      ]
+    },
+    {
+      "id": "burning-of-falmouth",
+      "name": "Burning of Falmouth",
+      "lat": 43.65483,
+      "lng": -70.25362,
+      "era": "revolutionary-war",
+      "start_year": 1775,
+      "end_year": 1775,
+      "kind": "battle",
+      "summary": "On October 18, 1775, a Royal Navy squadron under Captain Henry Mowat bombarded and burned Falmouth (present-day Portland) in retaliation for Patriot resistance. Much of the town was destroyed. Outrage at the burning helped push the Second Continental Congress to create the Continental Navy.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Burning_of_Falmouth",
+      "tags": [
+        "battle",
+        "british-raid",
+        "portland"
+      ]
+    },
+    {
+      "id": "battle-of-machias-1775",
+      "name": "Battle of Machias (1775)",
+      "lat": 44.68444,
+      "lng": -67.38306,
+      "era": "revolutionary-war",
+      "start_year": 1775,
+      "end_year": 1775,
+      "kind": "battle",
+      "summary": "On June 11–12, 1775, armed townsmen of Machias pursued the British schooner HMS Margaretta down the bay aboard the sloop Unity. After the Margaretta's commander was mortally wounded, she surrendered. It is remembered as the first naval battle of the American Revolution.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Battle_of_Machias",
+      "tags": [
+        "battle",
+        "naval",
+        "margaretta"
+      ]
+    },
+    {
+      "id": "penobscot-expedition",
+      "name": "Penobscot Expedition (1779)",
+      "lat": 44.39083,
+      "lng": -68.80556,
+      "era": "revolutionary-war",
+      "start_year": 1779,
+      "end_year": 1779,
+      "kind": "battle",
+      "summary": "In July–August 1779, Massachusetts sent a fleet and militia to retake Castine, where the British were building Fort George. Hesitation among the American commanders and the arrival of a British relief squadron turned the operation into a rout, with the American ships burned or scuttled up the Penobscot. It was among the worst American naval defeats of the war.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Penobscot_Expedition",
+      "tags": [
+        "battle",
+        "siege",
+        "naval-defeat"
+      ]
+    },
+    {
+      "id": "battle-of-machias-1777",
+      "name": "Battle of Machias (1777)",
+      "lat": 44.71405,
+      "lng": -67.460861,
+      "era": "revolutionary-war",
+      "start_year": 1777,
+      "end_year": 1777,
+      "kind": "battle",
+      "summary": "On August 13–14, 1777, a British force under Commodore Sir George Collier tried to seize Machias, then a base for American privateers. Local militia, aided by Penobscot, Passamaquoddy, and Maliseet allies, prevented a landing and drove the raiders off.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Battle_of_Machias_(1777)",
+      "tags": [
+        "battle",
+        "raid",
+        "privateers"
+      ]
+    },
+    {
+      "id": "capture-of-hms-boxer",
+      "name": "Capture of HMS Boxer (1813)",
+      "lat": 43.82,
+      "lng": -69.52,
+      "era": "war-of-1812",
+      "start_year": 1813,
+      "end_year": 1813,
+      "kind": "battle",
+      "summary": "On September 5, 1813, the USS Enterprise under Lt. William Burrows captured the Royal Navy gun-brig HMS Boxer off Pemaquid Point. Both commanding officers were killed in the roughly half-hour fight. The two captains were buried side by side in Portland's Eastern Cemetery.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Capture_of_HMS_Boxer",
+      "tags": [
+        "battle",
+        "naval",
+        "boxer-enterprise"
+      ]
+    },
+    {
+      "id": "battle-of-hampden",
+      "name": "Battle of Hampden (1814)",
+      "lat": 44.74444,
+      "lng": -68.87278,
+      "era": "war-of-1812",
+      "start_year": 1814,
+      "end_year": 1814,
+      "kind": "battle",
+      "summary": "On September 3, 1814, a British force under Sir John Sherbrooke attacked Hampden to capture the damaged frigate USS Adams. The frigate was scuttled and burned to prevent capture, and Bangor surrendered the same day. The defeat helped fuel Maine's post-war push for statehood.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Battle_of_Hampden",
+      "tags": [
+        "battle",
+        "uss-adams",
+        "new-ireland"
+      ]
+    },
+    {
+      "id": "british-occupation-of-castine",
+      "name": "British Occupation of Castine (New Ireland)",
+      "lat": 44.389732,
+      "lng": -68.804054,
+      "era": "war-of-1812",
+      "start_year": 1814,
+      "end_year": 1815,
+      "kind": "other",
+      "summary": "From September 1814 to April 1815, Britain occupied Castine and governed eastern Maine as the colony of 'New Ireland,' rebuilding Fort George and adding new forts. The occupation ended with the Treaty of Ghent. Customs revenues collected there — the 'Castine Fund' — later helped found Dalhousie University in Halifax.",
+      "wikipedia": "https://en.wikipedia.org/wiki/New_Ireland_(Maine)",
+      "tags": [
+        "other",
+        "occupation",
+        "new-ireland"
+      ]
+    },
+    {
+      "id": "maine-statehood",
+      "name": "Maine Statehood (1820)",
+      "lat": 44.30722,
+      "lng": -69.78167,
+      "era": "early-statehood",
+      "start_year": 1820,
+      "end_year": 1820,
+      "kind": "other",
+      "summary": "Maine became the 23rd state on March 15, 1820, under the Missouri Compromise, separating from Massachusetts. Augusta was designated the capital in 1827, and the Bulfinch-designed State House was completed in 1832. The marker is placed at the State House in Augusta.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Maine_State_House",
+      "tags": [
+        "other",
+        "statehood",
+        "augusta"
+      ]
+    },
+    {
+      "id": "fort-kent-blockhouse",
+      "name": "Fort Kent Blockhouse (Aroostook War)",
+      "lat": 47.25278,
+      "lng": -68.595,
+      "era": "early-statehood",
+      "start_year": 1839,
+      "end_year": 1839,
+      "kind": "fort",
+      "summary": "Built in 1839 by Maine militia during the bloodless Aroostook War border dispute with New Brunswick, Fort Kent is the only surviving American fortification from the crisis. The log blockhouse at the confluence of the Fish and Saint John rivers is now the Fort Kent State Historic Site.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_Kent_(fort)",
+      "tags": [
+        "fort",
+        "aroostook-war",
+        "blockhouse"
+      ]
+    },
+    {
+      "id": "webster-ashburton-treaty",
+      "name": "Webster–Ashburton Treaty (1842)",
+      "lat": 47.27361,
+      "lng": -68.255,
+      "era": "early-statehood",
+      "start_year": 1842,
+      "end_year": 1842,
+      "kind": "treaty",
+      "summary": "Signed August 9, 1842, in Washington, D.C., the treaty settled the Maine–New Brunswick border, ending the Aroostook dispute. It awarded about 7,015 square miles of the disputed territory to the United States and the remainder to Britain. The marker sits on the Saint John River near Madawaska, which the treaty made the border.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Webster%E2%80%93Ashburton_Treaty",
+      "tags": [
+        "treaty",
+        "border",
+        "aroostook"
+      ]
+    },
+    {
+      "id": "maine-law",
+      "name": "Maine Law (1851)",
+      "lat": 43.66147,
+      "lng": -70.25533,
+      "era": "early-statehood",
+      "start_year": 1851,
+      "end_year": 1851,
+      "kind": "other",
+      "summary": "Passed June 2, 1851, the Maine Liquor Law was the first statewide prohibition statute in the United States. It was drafted at the urging of Portland mayor Neal Dow, the 'Napoleon of Temperance.' Twelve states soon copied Maine's 'dry' laws; the law was repealed in 1856 but prohibition was later re-enacted in Maine.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Maine_Liquor_Law",
+      "tags": [
+        "other",
+        "prohibition",
+        "neal-dow"
+      ]
+    },
+    {
+      "id": "joshua-chamberlain",
+      "name": "Joshua Chamberlain — Brewer",
+      "lat": 44.77722,
+      "lng": -68.74667,
+      "era": "civil-war",
+      "start_year": 1862,
+      "end_year": 1865,
+      "kind": "other",
+      "summary": "Born in Brewer in 1828, Joshua L. Chamberlain became colonel of the 20th Maine Volunteer Infantry in 1863. His regiment's stand on Little Round Top at Gettysburg earned him the Medal of Honor. After the war he served as governor of Maine and president of Bowdoin College.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Joshua_Chamberlain",
+      "tags": [
+        "other",
+        "20th-maine",
+        "chamberlain"
+      ]
+    },
+    {
+      "id": "fort-gorges",
+      "name": "Fort Gorges",
+      "lat": 43.66306,
+      "lng": -70.22139,
+      "era": "civil-war",
+      "start_year": 1858,
+      "end_year": 1865,
+      "kind": "fort",
+      "summary": "Built from 1858 to 1865 on Hog Island Ledge in Portland Harbor, this granite fort guarded the harbor entrance during the Civil War. Advances in artillery made it obsolete before it was ever garrisoned or fired a shot. It is now a park, reachable only by boat.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_Gorges",
+      "tags": [
+        "fort",
+        "coastal-defense",
+        "harbor"
+      ]
+    },
+    {
+      "id": "fort-knox",
+      "name": "Fort Knox (Maine)",
+      "lat": 44.566194,
+      "lng": -68.802417,
+      "era": "civil-war",
+      "start_year": 1844,
+      "end_year": 1869,
+      "kind": "fort",
+      "summary": "Construction on this granite fort on the Penobscot River at Prospect began in 1844, after the Aroostook crisis, and continued through the Civil War until 1869. Built to protect Bangor's lumber port, it was never fully armed. It is Maine's largest historic fort and a National Historic Landmark.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_Knox_(Maine)",
+      "tags": [
+        "fort",
+        "coastal-defense",
+        "penobscot"
+      ]
+    },
+    {
+      "id": "great-fire-portland-1866",
+      "name": "Great Fire of Portland (1866)",
+      "lat": 43.65139,
+      "lng": -70.25694,
+      "era": "industrial-era",
+      "start_year": 1866,
+      "end_year": 1866,
+      "kind": "disaster",
+      "summary": "On July 4, 1866, a firecracker sparked a blaze that destroyed most of Portland's commercial district — 1,800 buildings across 10 streets. The city rebuilt in brick and stone, giving Portland its Victorian streetscape.",
+      "wikipedia": "https://en.wikipedia.org/wiki/1866_great_fire_of_Portland,_Maine",
+      "tags": [
+        "portland",
+        "fire",
+        "rebuild"
+      ]
+    },
+    {
+      "id": "lewiston-mills",
+      "name": "Lewiston Mills and Water Power System",
+      "lat": 44.09389,
+      "lng": -70.21722,
+      "era": "industrial-era",
+      "start_year": 1850,
+      "end_year": 1920,
+      "kind": "settlement",
+      "summary": "Canals harnessing the Androscoggin River's Great Falls powered one of New England's largest textile complexes, drawing tens of thousands of French-Canadian workers to Lewiston-Auburn. The historic district preserves the mills, canals, and worker housing.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Lewiston_Mills_and_Water_Power_System_Historic_District",
+      "tags": [
+        "lewiston",
+        "textiles",
+        "industry",
+        "franco-american"
+      ]
+    },
+    {
+      "id": "acadia-national-park",
+      "name": "Acadia National Park (est. 1916)",
+      "lat": 44.35,
+      "lng": -68.217,
+      "era": "industrial-era",
+      "start_year": 1916,
+      "end_year": 1919,
+      "kind": "other",
+      "summary": "Established in 1916 from private land donations, Acadia was the first national park east of the Mississippi. It preserves Mount Desert Island's coastline, Cadillac Mountain, and miles of carriage roads.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Acadia_National_Park",
+      "tags": [
+        "acadia",
+        "conservation",
+        "mount-desert"
+      ]
+    },
+    {
+      "id": "portsmouth-naval-shipyard",
+      "name": "Portsmouth Naval Shipyard",
+      "lat": 43.07889,
+      "lng": -70.73417,
+      "era": "industrial-era",
+      "start_year": 1800,
+      "end_year": 2026,
+      "kind": "shipyard",
+      "summary": "Founded in 1800 on Seavey's Island in Kittery (despite the New Hampshire name), the yard built the Navy's first submarine commissioned in 1900 and the USS Squalus. It remains an active submarine overhaul facility.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Portsmouth_Naval_Shipyard",
+      "tags": [
+        "kittery",
+        "navy",
+        "submarines"
+      ]
+    },
+    {
+      "id": "bath-iron-works",
+      "name": "Bath Iron Works",
+      "lat": 43.904494,
+      "lng": -69.814746,
+      "era": "industrial-era",
+      "start_year": 1884,
+      "end_year": 2026,
+      "kind": "shipyard",
+      "summary": "Founded in 1884, BIW on the Kennebec River became one of the Navy's premier warship builders, launching destroyers through both world wars and the Arleigh Burke–class guided-missile destroyers of the modern fleet.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Bath_Iron_Works",
+      "tags": [
+        "bath",
+        "navy",
+        "destroyers",
+        "kennebec"
+      ]
+    },
+    {
+      "id": "uss-squalus-1939",
+      "name": "USS Squalus sinking (1939)",
+      "lat": 42.98,
+      "lng": -70.61,
+      "era": "world-wars",
+      "start_year": 1939,
+      "end_year": 1939,
+      "kind": "disaster",
+      "summary": "Built at Portsmouth Naval Shipyard in Kittery, the submarine USS Squalus sank during test dives off the Isles of Shoals on May 23, 1939, drowning 26 men. Divers using the new McCann Rescue Chamber saved all 33 survivors; the boat was salvaged and recommissioned as USS Sailfish. The actual wreck site lies just south of the state line, so the marker sits at the nearest Maine point.",
+      "wikipedia": "https://en.wikipedia.org/wiki/USS_Sailfish_(SS-192)",
+      "tags": [
+        "navy",
+        "submarine",
+        "rescue",
+        "isles-of-shoals"
+      ]
+    },
+    {
+      "id": "nas-brunswick",
+      "name": "Naval Air Station Brunswick",
+      "lat": 43.89222,
+      "lng": -69.93861,
+      "era": "world-wars",
+      "start_year": 1943,
+      "end_year": 2011,
+      "kind": "other",
+      "summary": "Built in 1943, NAS Brunswick flew anti-submarine patrols over the North Atlantic in World War II and later based P-3 Orion squadrons through the Cold War. It closed in 2011 and is now Brunswick Landing, a civilian airport and business park.",
+      "wikipedia": "https://en.wikipedia.org/wiki/NAS_Brunswick",
+      "tags": [
+        "brunswick",
+        "navy",
+        "aviation",
+        "wwii"
+      ]
+    },
+    {
+      "id": "portland-head-light",
+      "name": "Portland Head Light (1791)",
+      "lat": 43.62306,
+      "lng": -70.20778,
+      "era": "world-wars",
+      "start_year": 1791,
+      "end_year": 1945,
+      "kind": "other",
+      "summary": "Completed in 1791 and commissioned by George Washington, Portland Head Light is Maine's oldest lighthouse. During World War II the surrounding Fort Williams bristled with coastal artillery and the light was dimmed for blackouts.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Portland_Head_Light",
+      "tags": [
+        "cape-elizabeth",
+        "lighthouse",
+        "coast"
+      ]
+    },
+    {
+      "id": "loring-afb",
+      "name": "Loring Air Force Base",
+      "lat": 46.94972,
+      "lng": -67.88889,
+      "era": "cold-war",
+      "start_year": 1950,
+      "end_year": 1994,
+      "kind": "other",
+      "summary": "Built 1947–1953 near Limestone, Loring was a Strategic Air Command heavy-bomber base — among the closest U.S. bases to the Soviet Union — with B-36 and B-52 wings on nuclear alert. It closed in 1994 and is now Loring Commerce Centre.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Loring_Air_Force_Base",
+      "tags": [
+        "limestone",
+        "sac",
+        "bombers",
+        "nuclear"
+      ]
+    },
+    {
+      "id": "dow-field-bangor",
+      "name": "Dow Field / Dow Air Force Base (Bangor)",
+      "lat": 44.81417,
+      "lng": -68.83083,
+      "era": "cold-war",
+      "start_year": 1941,
+      "end_year": 1968,
+      "kind": "other",
+      "summary": "Taken over by the Army just before World War II as Bangor Army Air Field, the base became Dow AFB in 1948, hosting Strategic Air Command bombers, air-defense interceptors, and BOMARC nuclear-tipped missiles. It closed in 1968; the Maine Air National Guard's 101st Air Refueling Wing still flies from the field.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Bangor_Air_National_Guard_Base",
+      "tags": [
+        "bangor",
+        "air-force",
+        "bomarc",
+        "wwii"
+      ]
+    },
+    {
+      "id": "ranked-choice-voting-2016",
+      "name": "Ranked-choice voting adopted (2016)",
+      "lat": 44.30667,
+      "lng": -69.78028,
+      "era": "modern",
+      "start_year": 2016,
+      "end_year": 2020,
+      "kind": "other",
+      "summary": "Maine voters approved Question 5 in 2016 with 52%, making Maine the first state to adopt ranked-choice voting. First used in the 2018 primaries, Maine became the first state to use it in a presidential election in 2020.",
+      "wikipedia": "https://en.wikipedia.org/wiki/2016_Maine_Question_5",
+      "tags": [
+        "augusta",
+        "elections",
+        "first-in-nation"
+      ]
+    },
+    {
+      "id": "katahdin-woods-waters",
+      "name": "Katahdin Woods and Waters National Monument (2016)",
+      "lat": 45.970362,
+      "lng": -68.619336,
+      "era": "modern",
+      "start_year": 2016,
+      "end_year": 2016,
+      "kind": "other",
+      "summary": "On August 24, 2016, President Obama designated 87,563 acres of forestland east of Baxter State Park a national monument, donated by Elliotsville Plantation. It protects the East Branch of the Penobscot River watershed, moose and lynx habitat, and Wabanaki cultural landscapes.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Katahdin_Woods_and_Waters_National_Monument",
+      "tags": [
+        "katahdin",
+        "conservation",
+        "penobscot",
+        "national-monument"
+      ]
+    },
+    {
+      "id": "fort-western",
+      "name": "Fort Western",
+      "lat": 44.31639,
+      "lng": -69.77111,
+      "era": "french-indian-war",
+      "start_year": 1754,
+      "end_year": 1775,
+      "kind": "fort",
+      "summary": "A fortified trading post built in 1754 by the Kennebec Proprietors at the head of navigation on the Kennebec River, at modern Augusta; its main building is described as the oldest surviving wooden fort in America. In September 1775, Benedict Arnold's 1,100-man expedition stopped here to repair bateaux and gather supplies before the wilderness march toward Quebec.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Fort_Western",
+      "tags": [
+        "arnold-expedition",
+        "fort",
+        "kennebec",
+        "trading-post"
+      ]
+    },
+    {
+      "id": "battle-pequawket",
+      "name": "Battle of Pequawket (Lovewell's Fight)",
+      "lat": 44.021,
+      "lng": -70.936,
+      "era": "dummers-war",
+      "start_year": 1725,
+      "end_year": 1725,
+      "date_display": "May 9, 1725 (O.S.)",
+      "kind": "battle",
+      "summary": "Fought on May 9, 1725 (O.S.) at Pequawket, present-day Fryeburg, Maine, between Captain John Lovewell's company and Abenaki led by Chief Paugus. It was the last major engagement of Dummer's War between New England and the Wabanaki Confederacy, and it became a celebrated part of regional lore for generations.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Battle_of_Pequawket",
+      "tags": [
+        "wabanaki",
+        "dummers-war"
+      ]
+    },
+    {
+      "id": "treaty-casco-1678",
+      "name": "Treaty of Casco (1678)",
+      "lat": 43.74722222,
+      "lng": -70.25916667,
+      "era": "king-philips-war",
+      "start_year": 1678,
+      "end_year": 1678,
+      "date_display": "1678",
+      "kind": "treaty",
+      "summary": "The treaty that brought to a close the war between the Indigenous Dawnland nations and the English settlers, ending the Maine fighting of King Philip's War. No copies of the treaty or its proceedings survive, so historians rely on a summary by Jeremy Belknap in his 1784 History of New Hampshire. Coordinates are those of Falmouth (present-day New Casco), the documented treaty area.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Treaty_of_Casco_(1678)",
+      "tags": [
+        "wabanaki",
+        "treaty"
+      ]
+    },
+    {
+      "id": "treaty-casco-1703",
+      "name": "Treaty of Casco (1703)",
+      "lat": 43.74722222,
+      "lng": -70.25916667,
+      "era": "queen-annes-war",
+      "start_year": 1703,
+      "end_year": 1703,
+      "date_display": "June 20, 1703",
+      "kind": "treaty",
+      "summary": "On June 20, 1703, Governor Joseph Dudley met chiefs at New Casco (present-day Falmouth, Maine) to head off renewed hostilities; the Indians professed peace, presented a wampum belt, and ended the ceremony with an exchange of volleys. Alarmed at losing influence in Acadia, the French instigated the Abenaki raids that struck the frontier from Casco to Wells that August.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Treaty_of_Casco_(1703)",
+      "tags": [
+        "wabanaki",
+        "treaty"
+      ]
+    },
+    {
+      "id": "treaty-portsmouth-1713",
+      "name": "Treaty of Portsmouth (1713)",
+      "lat": 43.05805556,
+      "lng": -70.7825,
+      "era": "queen-annes-war",
+      "start_year": 1713,
+      "end_year": 1713,
+      "date_display": "July 13, 1713",
+      "kind": "treaty",
+      "summary": "Signed on July 13, 1713, it ended hostilities between the Eastern Abenakis and the British provinces of Massachusetts Bay and New Hampshire after Queen Anne's War. The agreement renewed a 1693 treaty the tribes had made with Governor Sir William Phips. Signed at Portsmouth, New Hampshire.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Treaty_of_Portsmouth_(1713)",
+      "tags": [
+        "wabanaki",
+        "treaty"
+      ]
+    },
+    {
+      "id": "wabanaki-confederacy",
+      "name": "Wabanaki Confederacy",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": 1680,
+      "end_year": 1689,
+      "date_display": "1680s",
+      "kind": "other",
+      "summary": "A confederation of five principal Eastern Algonquian nations — the Abenaki, Mi'kmaq, Wolastoqiyik, Passamaquoddy, and Penobscot — known as the People of the Dawn. It formed in the 1680s, shaped a century of colonial wars in Maine, and was revived in 1993. No single mappable location: the confederacy spans present-day Maine, New Hampshire, Vermont, New Brunswick, Nova Scotia, and parts of Quebec.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Wabanaki_Confederacy",
+      "tags": [
+        "wabanaki"
+      ]
+    },
+    {
+      "id": "tarratine-wars",
+      "name": "The Tarratine Wars",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": 1607,
+      "end_year": 1631,
+      "date_display": "1607–1631",
+      "kind": "battle",
+      "summary": "A sporadic 25-year armed conflict between the Mi'kmaq confederacy and members and allies of the Abenaki confederacy in early-17th-century coastal Maine. Fighting ran from about 1607 to the last reported attack on August 8, 1631, and the southern campaigns exposed the attackers to the 1616–1619 epidemic. 'Tarratine' was the English colonists' term for the Indigenous peoples involved; the article title is retained for the Wikipedia link. No single battle site: the conflict ranged across coastal Maine and the Maritimes.",
+      "wikipedia": "https://en.wikipedia.org/wiki/The_Tarratine_Wars",
+      "tags": [
+        "wabanaki"
+      ]
+    },
+    {
+      "id": "red-paint-people",
+      "name": "Red Paint People (Maritime Archaic culture)",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": -7000,
+      "end_year": -3500,
+      "date_display": "c. 7000–3500 BCE",
+      "kind": "other",
+      "summary": "A pre-Columbian culture of New England and Atlantic Canada, probably a subset of the Maritime Archaic complex, named for burials covered in large quantities of red ochre — 'Red Paint People' is the older popular term for this archaeological culture. The first scientific examination of the graves was undertaken in 1892 by Charles Willoughby of Harvard's Peabody Museum. Burial sites are spread across the region with no single location.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Red_Paint_People",
+      "tags": [
+        "wabanaki",
+        "archaeology"
+      ]
+    },
+    {
+      "id": "goddard-site",
+      "name": "Goddard Site",
+      "lat": 44.27527778,
+      "lng": -68.55944444,
+      "era": "wabanaki-heritage",
+      "start_year": 1979,
+      "end_year": 1979,
+      "date_display": "Prehistoric site · National Register listed 1979",
+      "kind": "other",
+      "summary": "A prehistoric archaeological site in Brooklin, Maine, notable for stone artifacts sourced far from the area and for worked copper objects. It is the find site of the controversial so-called 'Maine penny,' a Norse coin from the reign of Olaf Kyrre (1067–1093) whose significance for pre-Columbian contact is debated by scholars; the site's primary importance is as a significant Indigenous archaeological site. It was listed on the National Register of Historic Places in 1979. Coordinates are those of Brooklin, Maine.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Goddard_Site",
+      "tags": [
+        "wabanaki",
+        "archaeology"
+      ]
+    },
+    {
+      "id": "joint-tribal-council-v-morton",
+      "name": "Joint Tribal Council of the Passamaquoddy Tribe v. Morton",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": 1975,
+      "end_year": 1975,
+      "date_display": "1975",
+      "kind": "other",
+      "summary": "A 1975 First Circuit decision holding that the Nonintercourse Act applied to the Passamaquoddy and Penobscot, establishing a federal trust relationship that the State of Maine could not terminate. It cleared the way for tribal land claims covering about 60 percent of Maine and led to the 1980 Maine Indian Claims Settlement Act, which allocated $81.5 million to the tribes. A court decision with no single geographic location.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Joint_Tribal_Council_of_the_Passamaquoddy_Tribe_v._Morton",
+      "tags": [
+        "wabanaki",
+        "sovereignty"
+      ]
+    }
+  ],
+  "settlement_shading": [
+    {
+      "id": "settled-coast-1650",
+      "label": "English settlements by ~1650 (approximate)",
+      "era": "early-settlement",
+      "status": "settled",
+      "polygon": [
+        [
+          43.05,
+          -70.75
+        ],
+        [
+          43.1,
+          -70.6
+        ],
+        [
+          43.35,
+          -70.42
+        ],
+        [
+          43.55,
+          -70.33
+        ],
+        [
+          43.68,
+          -70.28
+        ],
+        [
+          43.86,
+          -69.6
+        ],
+        [
+          43.87,
+          -69.52
+        ],
+        [
+          43.8,
+          -69.62
+        ],
+        [
+          43.6,
+          -70.35
+        ],
+        [
+          43.3,
+          -70.5
+        ],
+        [
+          43.05,
+          -70.75
+        ]
+      ],
+      "note": "Approximate. A narrow coastal strip from York to Pemaquid; the interior remained under Wabanaki control."
+    },
+    {
+      "id": "contested-valleys-1725",
+      "label": "Settled coast and Kennebec corridor by ~1725 (approximate)",
+      "era": "dummers-war",
+      "status": "contested",
+      "polygon": [
+        [
+          43.05,
+          -70.75
+        ],
+        [
+          43.4,
+          -70.35
+        ],
+        [
+          43.86,
+          -69.6
+        ],
+        [
+          44.1,
+          -69.7
+        ],
+        [
+          44.5,
+          -69.75
+        ],
+        [
+          44.78,
+          -69.89
+        ],
+        [
+          44.6,
+          -69.95
+        ],
+        [
+          44.1,
+          -69.85
+        ],
+        [
+          43.9,
+          -69.75
+        ],
+        [
+          43.6,
+          -70.4
+        ],
+        [
+          43.05,
+          -70.75
+        ]
+      ],
+      "note": "Approximate. English settlement pushed up the Kennebec toward Norridgewock, but the frontier was violently contested during Dummer's War."
+    },
+    {
+      "id": "contested-frontier-1760",
+      "label": "River valleys contested by ~1760 (approximate)",
+      "era": "french-indian-war",
+      "status": "contested",
+      "polygon": [
+        [
+          43.05,
+          -70.75
+        ],
+        [
+          43.6,
+          -70.35
+        ],
+        [
+          44.0,
+          -69.5
+        ],
+        [
+          44.4,
+          -68.8
+        ],
+        [
+          44.7,
+          -68.75
+        ],
+        [
+          45.0,
+          -68.7
+        ],
+        [
+          45.1,
+          -68.9
+        ],
+        [
+          44.8,
+          -69.2
+        ],
+        [
+          44.6,
+          -69.6
+        ],
+        [
+          44.3,
+          -69.85
+        ],
+        [
+          43.9,
+          -69.9
+        ],
+        [
+          43.05,
+          -70.75
+        ]
+      ],
+      "note": "Approximate. British forts secured the Kennebec and Penobscot valleys, but much of the interior remained under Wabanaki control."
+    },
+    {
+      "id": "disputed-north-1840",
+      "label": "Disputed northern Maine by ~1840 (approximate)",
+      "era": "early-statehood",
+      "status": "disputed",
+      "polygon": [
+        [
+          46.3,
+          -69.9
+        ],
+        [
+          46.3,
+          -67.9
+        ],
+        [
+          47.46,
+          -67.9
+        ],
+        [
+          47.46,
+          -69.5
+        ],
+        [
+          47.2,
+          -70.0
+        ],
+        [
+          46.8,
+          -70.3
+        ],
+        [
+          46.3,
+          -69.9
+        ]
+      ],
+      "note": "Approximate. Northern Maine was claimed by both the US and Britain (the Aroostook dispute); worked by lumbermen from both sides, but its sovereignty was unsettled until the 1842 Webster–Ashburton Treaty."
+    },
+    {
+      "id": "settled-state-1860",
+      "label": "Near-full settlement by ~1860 (approximate)",
+      "era": "industrial-era",
+      "status": "settled",
+      "polygon": [
+        [
+          43.05,
+          -70.75
+        ],
+        [
+          43.6,
+          -70.35
+        ],
+        [
+          44.2,
+          -68.9
+        ],
+        [
+          44.7,
+          -67.9
+        ],
+        [
+          45.3,
+          -67.8
+        ],
+        [
+          46.0,
+          -67.9
+        ],
+        [
+          46.5,
+          -68.2
+        ],
+        [
+          46.5,
+          -69.5
+        ],
+        [
+          46.0,
+          -70.0
+        ],
+        [
+          45.0,
+          -70.3
+        ],
+        [
+          44.3,
+          -70.3
+        ],
+        [
+          43.05,
+          -70.75
+        ]
+      ],
+      "note": "Approximate. After the 1842 border settlement, farming and lumber towns spread across most of the state; only the far north woods remained sparsely settled."
+    }
+  ]
+}
+;
+var BERAS = {
+  "eras": [
+    {
+      "boundary_note": "No surveyed boundary lines exist for this era. The shaded region is an approximate depiction of the documented Wabanaki homeland (present-day Maine, New Hampshire, Vermont, and the Maritimes) — explicitly approximate, never empty or unclaimed.",
+      "date_label": "Through 1604",
+      "description": "Before sustained European colonization, this region was the homeland of the Wabanaki peoples — the Mi'kmaq, Wolastoqiyik (Maliseet), Passamaquoddy, Penobscot, and Abenaki — who call it Wabanaki, 'Dawnland.' No European-drawn boundaries existed; the land was under Indigenous control. The Wabanaki homeland did not end in 1604 — Wabanaki presence, sovereignty, and resistance continued throughout the colonial period and to the present day, and the homeland is shown as a persistent background layer in later eras.",
+      "end_year": 1604,
+      "id": "wabanaki-homelands",
+      "label": "Wabanaki Homelands",
+      "layers": [
+        {
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "label": "Approximate Wabanaki homeland (not a surveyed boundary)",
+          "note": "Approximate. Homeland of the Mi'kmaq, Wolastoqiyik, Passamaquoddy, Penobscot, and Abenaki — under Indigenous control.",
+          "style": {
+            "color": "#7c3aed",
+            "dashArray": "6 4",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.18,
+            "weight": 2
+          },
+          "type": "polygon"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Wabanaki Confederacy — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Wabanaki_Confederacy"
+        }
+      ],
+      "start_year": null
+    },
+    {
+      "boundary_note": "These are overlapping paper claims, not settled boundary lines. Shown as translucent claim bands with their documented latitude and river anchors.",
+      "date_label": "1604 – 1652",
+      "description": "France founded a settlement on Saint Croix Island in 1604 (moved to Port-Royal in 1605), claiming under the 1603 de Monts grant the coast between the 40th and 46th parallels. England countered with the Council for New England's November 1620 charter (40th to 48th parallel) and the 1622 Province of Maine patent between the Merrimack and Kennebec Rivers, plus the short-lived Popham Colony of 1607. The overlapping paper claims covered all of present-day Maine, though effective occupation on both sides was limited to scattered coastal posts.",
+      "end_year": 1652,
+      "id": "competing-claims",
+      "label": "French Acadia vs. English Claims",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              40.0,
+              -73.0
+            ],
+            [
+              40.0,
+              -63.0
+            ],
+            [
+              46.0,
+              -63.0
+            ],
+            [
+              46.0,
+              -73.0
+            ]
+          ],
+          "label": "French claim, 1603 de Monts grant (40th–46th parallels) — paper claim",
+          "note": "Paper claim only; French occupation was limited to Port-Royal and the St. Croix area.",
+          "style": {
+            "color": "#1d4ed8",
+            "dashArray": "6 4",
+            "fillColor": "#3b82f6",
+            "fillOpacity": 0.12,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              40.0,
+              -73.5
+            ],
+            [
+              40.0,
+              -62.5
+            ],
+            [
+              48.0,
+              -62.5
+            ],
+            [
+              48.0,
+              -73.5
+            ]
+          ],
+          "label": "English claim, 1620 Council for New England charter (40th–48th parallels) — paper claim",
+          "note": "Paper claim only; English presence was limited to fishing stations and the short-lived Popham Colony (1607).",
+          "style": {
+            "color": "#b91c1c",
+            "dashArray": "6 4",
+            "fillColor": "#ef4444",
+            "fillOpacity": 0.1,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              42.75,
+              -71.0
+            ],
+            [
+              42.82,
+              -70.81
+            ],
+            [
+              43.3,
+              -70.4
+            ],
+            [
+              43.75,
+              -69.77
+            ],
+            [
+              43.9,
+              -69.5
+            ],
+            [
+              43.7,
+              -69.9
+            ],
+            [
+              43.0,
+              -70.6
+            ],
+            [
+              42.7,
+              -71.1
+            ]
+          ],
+          "label": "Province of Maine patent, 1622 (Merrimack to Kennebec Rivers) — approximate",
+          "note": "Approximate coastal extent between the two named rivers.",
+          "style": {
+            "color": "#b45309",
+            "dashArray": "6 4",
+            "fillColor": "#d97706",
+            "fillOpacity": 0.14,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Acadia — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Acadia"
+        },
+        {
+          "label": "Council for New England — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Council_for_New_England"
+        },
+        {
+          "label": "Province of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Province_of_Maine"
+        }
+      ],
+      "start_year": 1604
+    },
+    {
+      "boundary_note": "District extent is approximate — the interior remained under Wabanaki control. The Kennebec-to-St. Croix tract (granted to the Duke of York in 1669, administered as Cornwall County, New York) and French claims east of Penobscot Bay overlapped it and are shown as rival claim bands, not settled lines.",
+      "date_label": "1652 – September 3, 1783",
+      "description": "Massachusetts Bay asserted jurisdiction over the Maine settlements in 1652, creating Yorkshire County from the Piscataqua River to Casco Bay, and had absorbed Gorges' Province of Maine and Lygonia by 1658. This was a contested claim, not settled rule: the Duke of York's competing 1669 grant of the Kennebec-to-St. Croix tract (the Territory of Sagadahock, administered as Cornwall County, Province of New York) was a separate rival jurisdiction, and France claimed lands east of Penobscot Bay as part of Acadia. The 1691 royal charter (effective 1692) folded all territory between the Piscataqua and St. Croix Rivers into the new Province of Massachusetts Bay. Maine remained part of Massachusetts until statehood in 1820.",
+      "end_year": 1783,
+      "id": "massachusetts-district",
+      "label": "Massachusetts Claims & Rule",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              43.05,
+              -70.75
+            ],
+            [
+              43.8,
+              -69.5
+            ],
+            [
+              44.5,
+              -68.4
+            ],
+            [
+              45.07,
+              -67.09
+            ],
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              46.2,
+              -68.6
+            ],
+            [
+              46.4,
+              -69.6
+            ],
+            [
+              45.4,
+              -70.6
+            ],
+            [
+              44.4,
+              -71.1
+            ],
+            [
+              43.4,
+              -71.1
+            ],
+            [
+              43.05,
+              -70.85
+            ]
+          ],
+          "label": "District of Maine under Massachusetts (approximate extent; interior under Wabanaki control)",
+          "note": "Approximate. Yorkshire County (1652) ran Piscataqua to Casco Bay; the 1691 charter extended the district to the St. Croix.",
+          "style": {
+            "color": "#b45309",
+            "dashArray": "8 5",
+            "fillColor": "#d97706",
+            "fillOpacity": 0.14,
+            "weight": 2
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              43.75,
+              -69.77
+            ],
+            [
+              44.2,
+              -69.0
+            ],
+            [
+              45.07,
+              -67.09
+            ],
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              44.6,
+              -68.6
+            ],
+            [
+              43.9,
+              -69.6
+            ]
+          ],
+          "label": "Territory of Sagadahock / Cornwall County, Province of New York (1669 grant: Kennebec to St. Croix) — overlapping claim",
+          "note": "Overlapping grant to the Duke of York; administered as Cornwall County, New York.",
+          "style": {
+            "color": "#6d28d9",
+            "dashArray": "6 4",
+            "fillColor": "#8b5cf6",
+            "fillOpacity": 0.12,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              44.0,
+              -68.8
+            ],
+            [
+              44.4,
+              -68.0
+            ],
+            [
+              45.07,
+              -67.09
+            ],
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              44.6,
+              -68.6
+            ],
+            [
+              44.1,
+              -68.9
+            ]
+          ],
+          "label": "French Acadia claim east of Penobscot Bay — overlapping claim",
+          "note": "France claimed lands east of Penobscot Bay as part of Acadia.",
+          "style": {
+            "color": "#1d4ed8",
+            "dashArray": "6 4",
+            "fillColor": "#3b82f6",
+            "fillOpacity": 0.12,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Province of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Province_of_Maine"
+        },
+        {
+          "label": "History of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/History_of_Maine"
+        },
+        {
+          "label": "District of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/District_of_Maine"
+        }
+      ],
+      "start_year": 1652
+    },
+    {
+      "boundary_note": "The due-north line from the St. Croix source was surveyed and marked in 1817–1818 and is drawn as documented. The rival 'highlands' interpretations and the disputed zone between them are approximate — the highlands' identity was precisely what was disputed — and are labeled as rival claims, not a settled line. Southern and western boundaries follow the 1691 charter limits (Piscataqua to St. Croix), shown by the modern state outline.",
+      "date_label": "September 3, 1783 – March 15, 1820",
+      "description": "The 1783 Treaty of Paris defined the U.S.–British boundary from the source of the St. Croix River due north to the 'highlands' dividing St. Lawrence and Atlantic watersheds, then along those highlands to the northwesternmost head of the Connecticut River. The negotiators attached no map and the 'highlands' were never clearly identified, leaving roughly 7.7 million acres of northern Maine in dispute between rival American and British interpretations. Maine remained the District of Massachusetts throughout this period.",
+      "end_year": 1820,
+      "id": "paris-boundary-dispute",
+      "label": "Treaty of Paris Boundary Dispute",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              47.62,
+              -67.75
+            ]
+          ],
+          "label": "Due-north line from the St. Croix source (surveyed 1817–1818)",
+          "note": "From the source monument at the Chiputneticook Lakes north to the St. John River, per the 1794 treaty commission.",
+          "style": {
+            "color": "#1e3a8a",
+            "weight": 2.5
+          },
+          "type": "polyline"
+        },
+        {
+          "coords": [
+            [
+              47.62,
+              -67.75
+            ],
+            [
+              47.9,
+              -68.6
+            ],
+            [
+              47.5,
+              -69.6
+            ],
+            [
+              46.8,
+              -69.6
+            ],
+            [
+              46.3,
+              -68.8
+            ],
+            [
+              46.5,
+              -67.9
+            ]
+          ],
+          "label": "Disputed zone — rival U.S./British 'highlands' interpretations, ~7.7 million acres (approximate)",
+          "note": "Approximate. American surveyors placed the treaty 'highlands' north of the St. John; British surveyors placed them south of it.",
+          "style": {
+            "color": "#c2410c",
+            "dashArray": "8 5",
+            "fillColor": "#ea580c",
+            "fillOpacity": 0.2,
+            "weight": 2
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              46.3,
+              -69.6
+            ],
+            [
+              46.5,
+              -68.6
+            ],
+            [
+              46.8,
+              -67.9
+            ]
+          ],
+          "label": "British 'highlands' interpretation (approximate, dashed)",
+          "note": "Approximate southerly highlands line per the British interpretation.",
+          "style": {
+            "color": "#7c2d12",
+            "dashArray": "6 5",
+            "weight": 2
+          },
+          "type": "polyline"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Treaty of Paris (1783) — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Treaty_of_Paris_(1783)"
+        },
+        {
+          "label": "Treaty of Paris, full text — Avalon Project, Yale",
+          "url": "https://avalon.law.yale.edu/18th_century/paris.asp"
+        },
+        {
+          "label": "The Mitchell Map in Paris — Osher Map Library",
+          "url": "https://oshermaps.org/special-map-exhibits/the-mitchell-map-1755-1782-an-irony-of-empire/iv-the-mitchell-map-in-paris"
+        },
+        {
+          "label": "District of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/District_of_Maine"
+        }
+      ],
+      "start_year": 1783
+    },
+    {
+      "boundary_note": "The state's southern and western boundaries are the modern settled lines. The northern boundary is shown as the disputed zone between the two rival claim lines — no single settled northern line is drawn for this era.",
+      "date_label": "March 15, 1820 – August 9, 1842",
+      "description": "Maine entered the Union as the 23rd state on March 15, 1820, under the Missouri Compromise, which admitted Maine as a free state alongside Missouri as a slave state. The northeastern boundary with New Brunswick remained unsettled, and rival Maine and New Brunswick timber operations in the disputed zone sparked the Aroostook 'War' of 1838–1839 — so called rhetorically; militias mobilized but never engaged in actual combat.",
+      "end_year": 1842,
+      "id": "state-disputed-north",
+      "label": "State of Maine (Disputed North)",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              47.62,
+              -67.75
+            ]
+          ],
+          "label": "Due-north line from the St. Croix source (surveyed 1817–1818)",
+          "note": "From the source monument at the Chiputneticook Lakes north to the St. John River.",
+          "style": {
+            "color": "#1e3a8a",
+            "weight": 2.5
+          },
+          "type": "polyline"
+        },
+        {
+          "coords": [
+            [
+              47.62,
+              -67.75
+            ],
+            [
+              47.9,
+              -68.6
+            ],
+            [
+              47.5,
+              -69.6
+            ],
+            [
+              46.8,
+              -69.6
+            ],
+            [
+              46.3,
+              -68.8
+            ],
+            [
+              46.5,
+              -67.9
+            ]
+          ],
+          "label": "Disputed zone — rival U.S./British claims, ~7.7 million acres (approximate)",
+          "note": "Approximate. Timber operations by both sides in this zone sparked the Aroostook confrontation of 1838–1839.",
+          "style": {
+            "color": "#c2410c",
+            "dashArray": "8 5",
+            "fillColor": "#ea580c",
+            "fillOpacity": 0.2,
+            "weight": 2
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              46.3,
+              -69.6
+            ],
+            [
+              46.5,
+              -68.6
+            ],
+            [
+              46.8,
+              -67.9
+            ]
+          ],
+          "label": "British 'highlands' interpretation (approximate, dashed)",
+          "note": "Approximate southerly highlands line per the British interpretation.",
+          "style": {
+            "color": "#7c2d12",
+            "dashArray": "6 5",
+            "weight": 2
+          },
+          "type": "polyline"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Maine"
+        },
+        {
+          "label": "Missouri Compromise — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Missouri_Compromise"
+        },
+        {
+          "label": "Aroostook War — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Aroostook_War"
+        }
+      ],
+      "start_year": 1820
+    },
+    {
+      "boundary_note": "The Webster–Ashburton line is the documented, settled northern boundary — the solid state outline shown on the map. Article I traces it from the St. Croix source monument north to the St. John, up the St. John and St. Francis to Lake Pohenegamook, then via survey lines to the highlands and down Hall's Stream to the 45th parallel.",
+      "date_label": "August 9, 1842 – present",
+      "description": "The Webster–Ashburton Treaty, signed August 9, 1842, in Washington, D.C., by Daniel Webster and Lord Ashburton, fixed the Maine–New Brunswick boundary and ended the 59-year dispute. It awarded most of the disputed territory to Maine while preserving an overland British connection between Lower Canada and the Maritime colonies. Maine's boundaries have been unchanged since. The Wabanaki nations — Penobscot, Passamaquoddy, Mi'kmaq, and Wolastoqiyik — persist in Maine today; the Wabanaki Confederacy was revived in 1993.",
+      "end_year": null,
+      "id": "state-modern",
+      "label": "State of Maine",
+      "layers": [],
+      "sources": [
+        {
+          "label": "Webster–Ashburton Treaty — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Webster-Ashburton_Treaty"
+        },
+        {
+          "label": "Webster–Ashburton Treaty, full text — Wikisource",
+          "url": "https://en.wikisource.org/wiki/Webster-Ashburton_Treaty"
+        },
+        {
+          "label": "Aroostook War — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Aroostook_War"
+        }
+      ],
+      "start_year": 1842
+    }
+  ],
+  "note": "Territorial boundary/claim eras for the Maine Historical Atlas time slider. Coordinates are [lat, lng], matching sites.json convention. Every layer is labeled as either a surveyed/settled line or an APPROXIMATE reconstruction / paper claim — approximate geometry is never presented as a precise boundary. Sources verified September 2026.",
+  "slider_note": "The in-app date slider operates at whole-year granularity, while some transitions have exact mid-year dates (Treaty of Paris, September 3 1783; Maine statehood, March 15 1820; Webster-Ashburton Treaty, August 9 1842). The eras' start_year/end_year boundaries are inclusive, so the slider assigns 1783 to the Massachusetts era, 1820 to the Treaty of Paris dispute era, and 1842 to the disputed-north era. Era descriptions carry the exact dates; the slider cannot distinguish months within a year."
+};
+var MAINE = {"type": "FeatureCollection", "features": [{"type": "Feature", "id": "USA-ME", "properties": {"fips": "23", "name": "Maine"}, "geometry": {"type": "Polygon", "coordinates": [[[-70.703921, 43.057759], [-70.824413, 43.128959], [-70.807983, 43.227544], [-70.966814, 43.34256], [-71.032537, 44.657025], [-71.08183, 45.303304], [-70.649151, 45.440228], [-70.720352, 45.511428], [-70.556043, 45.664782], [-70.386258, 45.735983], [-70.41912, 45.796229], [-70.260289, 45.889337], [-70.309581, 46.064599], [-70.210996, 46.327492], [-70.057642, 46.415123], [-69.997395, 46.694447], [-69.225147, 47.461219], [-69.044408, 47.428357], [-69.033454, 47.242141], [-68.902007, 47.176418], [-68.578868, 47.285957], [-68.376221, 47.285957], [-68.233821, 47.357157], [-67.954497, 47.198326], [-67.790188, 47.066879], [-67.779235, 45.944106], [-67.801142, 45.675736], [-67.456095, 45.604536], [-67.505388, 45.48952], [-67.417757, 45.379982], [-67.488957, 45.281397], [-67.346556, 45.128042], [-67.16034, 45.160904], [-66.979601, 44.804903], [-67.187725, 44.646072], [-67.308218, 44.706318], [-67.406803, 44.596779], [-67.549203, 44.624164], [-67.565634, 44.531056], [-67.75185, 44.54201], [-68.047605, 44.328409], [-68.118805, 44.476286], [-68.222867, 44.48724], [-68.173574, 44.328409], [-68.403606, 44.251732], [-68.458375, 44.377701], [-68.567914, 44.311978], [-68.82533, 44.311978], [-68.830807, 44.459856], [-68.984161, 44.426994], [-68.956777, 44.322932], [-69.099177, 44.103854], [-69.071793, 44.043608], [-69.258008, 43.923115], [-69.444224, 43.966931], [-69.553763, 43.840961], [-69.707118, 43.82453], [-69.833087, 43.720469], [-69.986442, 43.742376], [-70.030257, 43.851915], [-70.254812, 43.676653], [-70.194565, 43.567114], [-70.358873, 43.528776], [-70.369827, 43.435668], [-70.556043, 43.320652], [-70.703921, 43.057759]]]}}]};
+
+var erasById = {};
+SITES.eras.forEach(function (e) { erasById[e.id] = e; });
+var allSites = SITES.sites;
+var sites = allSites.filter(function (s) { return s.lat != null && s.lng != null; });
+var offmapSites = allSites.filter(function (s) { return s.lat == null || s.lng == null; });
+
+var SHADING_STYLE = {
+  settled:   { color: '#b45309', fillColor: '#d97706', fillOpacity: 0.28, dash: null,  label: 'Colonist-settled' },
+  contested: { color: '#c2410c', fillColor: '#ea580c', fillOpacity: 0.22, dash: [8, 6], label: 'Contested / disputed' },
+  disputed:  { color: '#7c2d12', fillColor: '#f59e0b', fillOpacity: 0.22, dash: [8, 6], label: 'Disputed' }
+};
+
+function hexRgb(hex) {
+  var h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function hexA(hex, a) {
+  var c = hexRgb(hex);
+  c.push(Math.round(a * 255));
+  return c;
+}
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Whole-year era lookup: boundaries are inclusive (1783 -> Massachusetts era,
+// 1820 -> Paris-dispute era, 1842 -> disputed-north era), so the first match
+// in file order wins.
+function eraForYear(year) {
+  for (var i = 0; i < BERAS.eras.length; i++) {
+    var e = BERAS.eras[i];
+    var s = (e.start_year == null) ? -Infinity : e.start_year;
+    var en = (e.end_year == null) ? Infinity : e.end_year;
+    if (year >= s && year <= en) return e;
+  }
+  return BERAS.eras[BERAS.eras.length - 1];
+}
+
+// Boundary-era layers -> GeoJSON. Atlas coords are [lat, lng]; deck.gl wants
+// [lng, lat]. Rings are closed explicitly.
+function flip(ring) { return ring.map(function (p) { return [p[1], p[0]]; }); }
+function closedRing(ring) { var r = flip(ring); r.push(r[0].slice()); return r; }
+
+function boundaryFC(era) {
+  return {
+    type: 'FeatureCollection',
+    features: (era.layers || []).map(function (l) {
+      var st = l.style || {};
+      var geom = (l.type === 'polyline')
+        ? { type: 'LineString', coordinates: flip(l.coords) }
+        : { type: 'Polygon', coordinates: [closedRing(l.coords)] };
+      return {
+        type: 'Feature',
+        properties: {
+          label: l.label,
+          note: l.note || '',
+          color: st.color || '#333333',
+          weight: st.weight || 2,
+          dash: st.dashArray ? st.dashArray.split(' ').map(Number) : null,
+          fill: hexA(st.fillColor || st.color || '#333333', (st.fillOpacity != null) ? st.fillOpacity : 0.15)
+        },
+        geometry: geom
+      };
+    })
+  };
+}
+
+function shadingFC() {
+  return {
+    type: 'FeatureCollection',
+    features: SITES.settlement_shading.map(function (sh) {
+      return {
+        type: 'Feature',
+        properties: { label: sh.label, note: sh.note || '', status: sh.status },
+        geometry: { type: 'Polygon', coordinates: [closedRing(sh.polygon)] }
+      };
+    })
+  };
+}
+var SHADING_FC = shadingFC();
+
+// Labels for a curated set of major sites: all treaties + the 6 earliest
+// battles (same set as the deck.gl demo).
+var labelSites = sites.filter(function (s) { return s.kind === 'treaty'; })
+  .concat(sites.filter(function (s) { return s.kind === 'battle'; })
+    .sort(function (a, b) { return a.start_year - b.start_year; }).slice(0, 6));
+
+var state = { year: 2026, checked: {}, shading: true, labels: true };
+SITES.eras.forEach(function (e) { state.checked[e.id] = true; });
+
+// A site is visible when its era is checked and it "existed by" the selected
+// year — markers accumulate as the slider moves forward, matching the atlas.
+function siteVisible(s) {
+  return !!state.checked[s.era] && (s.start_year == null || s.start_year <= state.year);
+}
+function yearRange(s) {
+  if (s.date_display) return s.date_display;
+  if (s.start_year && s.end_year && s.start_year !== s.end_year) return s.start_year + '\u2013' + s.end_year;
+  return (s.start_year != null) ? String(s.start_year) : '';
+}
+
+// ---------------------------------------------------------------------------
+// Layers. Rebuilt on every state change and swapped via deck.setProps —
+// deck.gl diffs by layer `id`, so GPU resources are reused, not recreated.
+// ---------------------------------------------------------------------------
+function buildLayers() {
+  var bEra = eraForYear(state.year);
+  var vis = sites.filter(siteVisible);
+  var lab = state.labels ? labelSites.filter(siteVisible) : [];
+  return [
+    // Raster basemap: OpenStreetMap standard tiles (no API key required).
+    // (Canonical TileLayer pattern: data = {z}/{x}/{y} template, per-tile
+    // layers built in renderSubLayers from tile.boundingBox.)
+    new TileLayer({
+      id: 'basemap',
+      data: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      minZoom: 0,
+      maxZoom: 19,
+      tileSize: 256,
+      onTileError: function () {
+        setStatus('Note: basemap tiles are failing to load \u2014 markers and overlays should still appear.');
+      },
+      renderSubLayers: function (props) {
+        var bb = props.tile.boundingBox;
+        return new BitmapLayer(props, {
+          data: null,
+          image: props.data,
+          bounds: [bb[0][0], bb[0][1], bb[1][0], bb[1][1]]
+        });
+      }
+    }),
+
+    // Documented modern state outline (always shown for reference).
+    new GeoJsonLayer({
+      id: 'modern-boundary',
+      data: MAINE,
+      pickable: false,
+      stroked: true,
+      filled: false,
+      getLineColor: [30, 58, 138, 255],
+      getLineWidth: 2.5,
+      lineWidthUnits: 'pixels'
+    }),
+
+    // Settlement shading (toggleable).
+    new GeoJsonLayer({
+      id: 'shading',
+      data: SHADING_FC,
+      visible: state.shading,
+      pickable: true,
+      stroked: true,
+      filled: true,
+      getLineColor: function (f) {
+        var st = SHADING_STYLE[f.properties.status] || SHADING_STYLE.disputed;
+        return hexA(st.color, 1);
+      },
+      getFillColor: function (f) {
+        var st = SHADING_STYLE[f.properties.status] || SHADING_STYLE.disputed;
+        return hexA(st.fillColor, st.fillOpacity);
+      },
+      getLineWidth: 2,
+      lineWidthUnits: 'pixels',
+      getDashArray: function (f) {
+        var st = SHADING_STYLE[f.properties.status] || SHADING_STYLE.disputed;
+        return st.dash;
+      },
+      autoHighlight: true,
+      highlightColor: [255, 255, 255, 80]
+    }),
+
+    // Territorial boundary / claim era for the selected year.
+    new GeoJsonLayer({
+      id: 'boundary-era',
+      data: boundaryFC(bEra),
+      pickable: true,
+      stroked: true,
+      filled: true,
+      getLineColor: function (f) { return hexA(f.properties.color, 1); },
+      getFillColor: function (f) { return f.properties.fill; },
+      getLineWidth: function (f) { return f.properties.weight; },
+      lineWidthUnits: 'pixels',
+      getDashArray: function (f) { return f.properties.dash; },
+      autoHighlight: true,
+      highlightColor: [255, 255, 255, 90]
+    }),
+
+    // Site markers, colored by era.
+    new ScatterplotLayer({
+      id: 'sites',
+      data: vis,
+      pickable: true,
+      getPosition: function (d) { return [d.lng, d.lat]; },
+      getFillColor: function (d) {
+        var e = erasById[d.era];
+        return hexA(e ? e.color : '#888888', 0.92);
+      },
+      getLineColor: [28, 25, 23, 230],
+      getLineWidth: 1.5,
+      lineWidthUnits: 'pixels',
+      getRadius: 7,
+      radiusUnits: 'pixels',
+      radiusMinPixels: 4,
+      radiusMaxPixels: 14,
+      stroked: true,
+      filled: true,
+      autoHighlight: true,
+      highlightColor: [255, 255, 255, 200]
+    }),
+
+    // Curated labels above the markers.
+    new TextLayer({
+      id: 'labels',
+      data: lab,
+      pickable: false,
+      getPosition: function (d) { return [d.lng, d.lat]; },
+      getText: function (d) { return d.name; },
+      getSize: 12,
+      sizeUnits: 'pixels',
+      getColor: [30, 30, 30, 235],
+      getPixelOffset: [0, -10],
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      characterSet: 'auto',
+      outlineWidth: 2,
+      getOutlineColor: [255, 255, 255, 230]
+    })
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Deck instance. `parent` (not `container`) is the v9 constructor prop.
+// ---------------------------------------------------------------------------
+var popupEl = document.getElementById('popup');
+popupEl.addEventListener('click', function (ev) {
+  if (ev.target.classList.contains('popup-close')) popupEl.hidden = true;
+});
+
+function getTooltip(info) {
+  var o = info.object, l = info.layer;
+  if (!o || !l) return null;
+  if (l.id === 'sites') {
+    var y = yearRange(o);
+    return { text: o.name + '\n' + erasById[o.era].label + (y ? ' \u00b7 ' + y : '') };
+  }
+  if (l.id === 'boundary-era' || l.id === 'shading') {
+    return { text: (o.properties.label + '\n' + (o.properties.note || '')).trim() };
+  }
+  return null;
+}
+
+function onMapClick(info) {
+  if (info.object && info.layer && info.layer.id === 'sites') {
+    showPopup(info.object, info.x, info.y);
+  } else {
+    popupEl.hidden = true;
+  }
+}
+
+function showPopup(site, x, y) {
+  var era = erasById[site.era];
+  var years = yearRange(site);
+  var kind = site.kind ? site.kind.replace(/-/g, ' ') : '';
+  popupEl.innerHTML =
+    '<button class="popup-close" aria-label="Close">&times;</button>' +
+    (kind ? '<div class="popup-kind">' + esc(kind) + '</div>' : '') +
+    '<h3>' + esc(site.name) + '</h3>' +
+    '<p class="popup-era">' + esc(era.label) + (years ? ' \u00b7 ' + esc(years) : '') + '</p>' +
+    '<p>' + esc(site.summary) + '</p>' +
+    '<a href="' + esc(site.wikipedia) + '" target="_blank" rel="noopener noreferrer">Read on Wikipedia &rarr;</a>';
+  popupEl.hidden = false;
+  // Clamp inside the map area; info.x/info.y are canvas-relative CSS pixels.
+  var wrap = document.querySelector('.map-wrap').getBoundingClientRect();
+  var px = Math.min(Math.max(x + 12, 8), Math.max(8, wrap.width - 310));
+  var py = Math.min(Math.max(y - 10, 8), Math.max(8, wrap.height - 220));
+  popupEl.style.left = px + 'px';
+  popupEl.style.top = py + 'px';
+}
+
+var deck;
+try {
+  deck = new Deck({
+    parent: document.getElementById('map'),
+    initialViewState: { longitude: -69, latitude: 45.3, zoom: 6.5 },
+    views: [new MapView({ id: 'maine', controller: true })],
+    layers: buildLayers(),
+    getTooltip: getTooltip,
+    onClick: onMapClick
+  });
+  setStatus('Map ready.');
+} catch (err) {
+  setStatus('Map failed to start: ' + (err && err.message ? err.message : err));
+  return;
+}
+
+// ---------------------------------------------------------------------------
+// UI wiring
+// ---------------------------------------------------------------------------
+function update() {
+  var bEra = eraForYear(state.year);
+  document.getElementById('time-year').textContent = state.year;
+  document.getElementById('time-era').textContent = bEra.label + ' \u00b7 ' + bEra.date_label;
+  document.getElementById('time-desc').textContent =
+    bEra.description + (bEra.boundary_note ? ' ' + bEra.boundary_note : '');
+  var src = document.getElementById('time-sources');
+  src.innerHTML = '';
+  (bEra.sources || []).forEach(function (s, i) {
+    if (i > 0) src.appendChild(document.createTextNode(' \u00b7 '));
+    var a = document.createElement('a');
+    a.href = s.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.textContent = s.label;
+    src.appendChild(a);
+  });
+  var vis = sites.filter(siteVisible);
+  document.getElementById('visible-count').textContent =
+    vis.length + ' of ' + sites.length + ' plotted sites visible in ' + state.year;
+  renderOffmap();
+  popupEl.hidden = true;
+  deck.setProps({ layers: buildLayers() });
+}
+
+function renderOffmap() {
+  var list = document.getElementById('offmap-list');
+  list.innerHTML = '';
+  var items = offmapSites.filter(siteVisible);
+  if (!items.length) {
+    list.innerHTML = '<p class="hint">None at this date with the current era filters.</p>';
+    return;
+  }
+  items.forEach(function (s) {
+    var era = erasById[s.era];
+    var div = document.createElement('div');
+    div.className = 'offmap-item';
+    div.innerHTML =
+      '<div class="offmap-head"><span class="era-dot" style="background:' + esc(era.color) + '"></span>' +
+      '<span>' + esc(s.name) + '</span></div>' +
+      '<div class="offmap-date">' + esc(yearRange(s)) + '</div>' +
+      '<p>' + esc(s.summary) + '</p>' +
+      '<a href="' + esc(s.wikipedia) + '" target="_blank" rel="noopener noreferrer">Read on Wikipedia &rarr;</a>';
+    list.appendChild(div);
+  });
+}
+
+function buildEraPanel() {
+  var list = document.getElementById('era-list');
+  list.innerHTML = '';
+  var counts = {};
+  SITES.eras.forEach(function (e) { counts[e.id] = 0; });
+  allSites.forEach(function (s) { counts[s.era] = (counts[s.era] || 0) + 1; });
+  SITES.eras.forEach(function (e) {
+    var row = document.createElement('label');
+    row.className = 'era-row';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.setAttribute('aria-label', 'Show ' + e.label);
+    cb.addEventListener('change', function () {
+      state.checked[e.id] = cb.checked;
+      update();
+    });
+    var dot = document.createElement('span');
+    dot.className = 'era-dot';
+    dot.style.background = e.color;
+    var name = document.createElement('span');
+    name.className = 'era-label';
+    name.textContent = e.label;
+    var count = document.createElement('span');
+    count.className = 'era-count';
+    count.textContent = (counts[e.id] || 0) + ' sites';
+    row.appendChild(cb);
+    row.appendChild(dot);
+    row.appendChild(name);
+    row.appendChild(count);
+    list.appendChild(row);
+  });
+}
+
+function buildShadingLegend() {
+  var ul = document.getElementById('shading-legend');
+  ul.innerHTML = '';
+  Object.keys(SHADING_STYLE).forEach(function (k) {
+    var st = SHADING_STYLE[k];
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="swatch" style="background:' + st.fillColor +
+      ';border:1px solid ' + st.color + '"></span>' + esc(st.label);
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById('time-slider').addEventListener('input', function (ev) {
+  state.year = Number(ev.target.value);
+  update();
+});
+document.getElementById('shading-checkbox').addEventListener('change', function (ev) {
+  state.shading = ev.target.checked;
+  deck.setProps({ layers: buildLayers() });
+});
+document.getElementById('labels-checkbox').addEventListener('change', function (ev) {
+  state.labels = ev.target.checked;
+  deck.setProps({ layers: buildLayers() });
+});
+document.getElementById('panel-toggle').addEventListener('click', function () {
+  var panel = document.getElementById('side-panel');
+  var collapsed = panel.classList.toggle('collapsed');
+  this.setAttribute('aria-expanded', String(!collapsed));
+  // The deck canvas does not auto-resize on all mobile browsers; nudge it.
+  setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 50);
+});
+
+document.getElementById('stats').textContent =
+  sites.length + ' of ' + allSites.length + ' sites plotted \u00b7 ' +
+  offmapSites.length + ' without mappable coordinates';
+
+buildEraPanel();
+buildShadingLegend();
+update();
+
+// Test hook (used by automated checks; harmless in the browser).
+window.__atlasTest = {
+  state: state,
+  update: update,
+  buildLayers: buildLayers,
+  eraForYear: eraForYear,
+  siteVisible: siteVisible,
+  sites: sites,
+  offmapSites: offmapSites,
+  getDeck: function () { return deck; }
+};
+
+})();
+</script>
+</body>
+</html>
