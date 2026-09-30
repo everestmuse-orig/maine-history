@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maine Historical Atlas</title>
+<meta name="description" content="An interactive map of Maine's history — significant historical sites from the discovery of Casco Bay through modern day, linked to Wikipedia, with colonial settlement shading.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+  <div class="header-inner">
+    <h1>Maine Historical Atlas</h1>
+    <p class="tagline">Every conflict, every era — from the discovery of Casco Bay to modern day.</p>
+  </div>
+  <button id="panel-toggle" class="panel-toggle" aria-expanded="true" aria-controls="side-panel">Filters</button>
+</header>
+
+<div class="layout">
+  <aside id="side-panel" class="side-panel" aria-label="Map filters and legend">
+    <section class="panel-section">
+      <h2>Eras &amp; conflicts</h2>
+      <p class="hint">Show or hide sites by era.</p>
+      <div id="era-list" class="era-list"></div>
+    </section>
+    <section class="panel-section">
+      <h2>Settlement shading</h2>
+      <label class="shading-toggle">
+        <input type="checkbox" id="shading-checkbox" checked>
+        Show settlement extents
+      </label>
+      <ul class="legend" id="shading-legend"></ul>
+      <p class="hint">Extents are approximate reconstructions, not precise boundaries.</p>
+    </section>
+    <section class="panel-section">
+      <h2>About</h2>
+      <p class="hint">Each marker links to its Wikipedia article for deeper reading.
+      Settlement shading shows where colonists were actually settled versus
+      territory considered out of their control at the time.</p>
+    </section>
+  </aside>
+
+  <main class="map-wrap">
+    <div id="map" role="application" aria-label="Interactive map of Maine historical sites"></div>
+  </main>
+</div>
+
+<footer class="app-footer">
+  <p>Coordinates and summaries verified against sources · Settlement extents approximate · Map data © OpenStreetMap contributors</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>
