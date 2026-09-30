@@ -1,0 +1,863 @@
+{
+  "eras": [
+    {
+      "boundary_note": "No surveyed boundary lines exist for this era. The shaded region is an approximate depiction of the documented Wabanaki homeland (present-day Maine, New Hampshire, Vermont, and the Maritimes) — explicitly approximate, not a surveyed boundary, and never 'uncontrolled' or empty.",
+      "date_label": "Through 1604",
+      "description": "Before sustained European colonization, this region was the homeland of the Wabanaki peoples — the Mi'kmaq, Wolastoqiyik (Maliseet), Passamaquoddy, Penobscot, and Abenaki — who call it Wabanaki, 'Dawnland.' No European-drawn boundaries existed; the land was under Indigenous control. The Wabanaki homeland did not end in 1604 — Wabanaki presence, sovereignty, and resistance continued throughout the colonial period and to the present day, and the homeland is shown as a persistent background layer in later eras.",
+      "end_year": 1604,
+      "id": "wabanaki-homelands",
+      "label": "Wabanaki Homelands",
+      "layers": [
+        {
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "label": "Approximate Wabanaki homeland (not a surveyed boundary)",
+          "note": "Approximate. Homeland of the Mi'kmaq, Wolastoqiyik, Passamaquoddy, Penobscot, and Abenaki — under Indigenous control.",
+          "style": {
+            "color": "#7c3aed",
+            "dashArray": "6 4",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.18,
+            "weight": 2
+          },
+          "type": "polygon"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Wabanaki Confederacy — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Wabanaki_Confederacy"
+        }
+      ],
+      "start_year": null
+    },
+    {
+      "boundary_note": "These are overlapping paper claims, not settled boundary lines. Shown as translucent claim bands with their documented latitude and river anchors.",
+      "date_label": "1604 – 1652",
+      "description": "France founded a settlement on Saint Croix Island in 1604 (moved to Port-Royal in 1605), claiming under the 1603 de Monts grant the coast between the 40th and 46th parallels. England countered with the Council for New England's November 1620 charter (40th to 48th parallel) and the 1622 Province of Maine patent between the Merrimack and Kennebec Rivers, plus the short-lived Popham Colony of 1607. The overlapping paper claims covered all of present-day Maine, though effective occupation on both sides was limited to scattered coastal posts.",
+      "end_year": 1652,
+      "id": "competing-claims",
+      "label": "French Acadia vs. English Claims",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              40.0,
+              -73.0
+            ],
+            [
+              40.0,
+              -63.0
+            ],
+            [
+              46.0,
+              -63.0
+            ],
+            [
+              46.0,
+              -73.0
+            ]
+          ],
+          "label": "French claim, 1603 de Monts grant (40th–46th parallels) — paper claim",
+          "note": "Paper claim only; French occupation was limited to Port-Royal and the St. Croix area.",
+          "style": {
+            "color": "#1d4ed8",
+            "dashArray": "6 4",
+            "fillColor": "#3b82f6",
+            "fillOpacity": 0.12,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              40.0,
+              -73.5
+            ],
+            [
+              40.0,
+              -62.5
+            ],
+            [
+              48.0,
+              -62.5
+            ],
+            [
+              48.0,
+              -73.5
+            ]
+          ],
+          "label": "English claim, 1620 Council for New England charter (40th–48th parallels) — paper claim",
+          "note": "Paper claim only; English presence was limited to fishing stations and the short-lived Popham Colony (1607).",
+          "style": {
+            "color": "#b91c1c",
+            "dashArray": "6 4",
+            "fillColor": "#ef4444",
+            "fillOpacity": 0.1,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              42.75,
+              -71.0
+            ],
+            [
+              42.82,
+              -70.81
+            ],
+            [
+              43.3,
+              -70.4
+            ],
+            [
+              43.75,
+              -69.77
+            ],
+            [
+              43.9,
+              -69.5
+            ],
+            [
+              43.7,
+              -69.9
+            ],
+            [
+              43.0,
+              -70.6
+            ],
+            [
+              42.7,
+              -71.1
+            ]
+          ],
+          "label": "Province of Maine patent, 1622 (Merrimack to Kennebec Rivers) — approximate",
+          "note": "Approximate coastal extent between the two named rivers.",
+          "style": {
+            "color": "#b45309",
+            "dashArray": "6 4",
+            "fillColor": "#d97706",
+            "fillOpacity": 0.14,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Acadia — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Acadia"
+        },
+        {
+          "label": "Council for New England — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Council_for_New_England"
+        },
+        {
+          "label": "Province of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Province_of_Maine"
+        }
+      ],
+      "start_year": 1604
+    },
+    {
+      "boundary_note": "District extent is approximate — the interior remained under Wabanaki control. The Kennebec-to-St. Croix tract (granted to the Duke of York in 1669, administered as Cornwall County, New York) and French claims east of Penobscot Bay overlapped it and are shown as rival claim bands, not settled lines.",
+      "date_label": "1652 – September 3, 1783",
+      "description": "Massachusetts Bay asserted jurisdiction over the Maine settlements in 1652, creating Yorkshire County from the Piscataqua River to Casco Bay, and had absorbed Gorges' Province of Maine and Lygonia by 1658. This was a contested claim, not settled rule: the Duke of York's competing 1669 grant of the Kennebec-to-St. Croix tract (the Territory of Sagadahock, administered as Cornwall County, Province of New York) was a separate rival jurisdiction, and France claimed lands east of Penobscot Bay as part of Acadia. The 1691 royal charter (effective 1692) folded all territory between the Piscataqua and St. Croix Rivers into the new Province of Massachusetts Bay. Maine remained part of Massachusetts until statehood in 1820.",
+      "end_year": 1783,
+      "id": "massachusetts-district",
+      "label": "Massachusetts Claims & Rule",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              43.05,
+              -70.75
+            ],
+            [
+              43.8,
+              -69.5
+            ],
+            [
+              44.5,
+              -68.4
+            ],
+            [
+              45.07,
+              -67.09
+            ],
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              46.2,
+              -68.6
+            ],
+            [
+              46.4,
+              -69.6
+            ],
+            [
+              45.4,
+              -70.6
+            ],
+            [
+              44.4,
+              -71.1
+            ],
+            [
+              43.4,
+              -71.1
+            ],
+            [
+              43.05,
+              -70.85
+            ]
+          ],
+          "label": "District of Maine under Massachusetts (approximate extent; interior under Wabanaki control)",
+          "note": "Approximate. Yorkshire County (1652) ran Piscataqua to Casco Bay; the 1691 charter extended the district to the St. Croix.",
+          "style": {
+            "color": "#b45309",
+            "dashArray": "8 5",
+            "fillColor": "#d97706",
+            "fillOpacity": 0.14,
+            "weight": 2
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              43.75,
+              -69.77
+            ],
+            [
+              44.2,
+              -69.0
+            ],
+            [
+              45.07,
+              -67.09
+            ],
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              44.6,
+              -68.6
+            ],
+            [
+              43.9,
+              -69.6
+            ]
+          ],
+          "label": "Territory of Sagadahock / Cornwall County, Province of New York (1669 grant: Kennebec to St. Croix) — overlapping claim",
+          "note": "Overlapping grant to the Duke of York; administered as Cornwall County, New York.",
+          "style": {
+            "color": "#6d28d9",
+            "dashArray": "6 4",
+            "fillColor": "#8b5cf6",
+            "fillOpacity": 0.12,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              44.0,
+              -68.8
+            ],
+            [
+              44.4,
+              -68.0
+            ],
+            [
+              45.07,
+              -67.09
+            ],
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              44.6,
+              -68.6
+            ],
+            [
+              44.1,
+              -68.9
+            ]
+          ],
+          "label": "French Acadia claim east of Penobscot Bay — overlapping claim",
+          "note": "France claimed lands east of Penobscot Bay as part of Acadia.",
+          "style": {
+            "color": "#1d4ed8",
+            "dashArray": "6 4",
+            "fillColor": "#3b82f6",
+            "fillOpacity": 0.12,
+            "weight": 1.5
+          },
+          "type": "polygon"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Province of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Province_of_Maine"
+        },
+        {
+          "label": "History of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/History_of_Maine"
+        },
+        {
+          "label": "District of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/District_of_Maine"
+        }
+      ],
+      "start_year": 1652
+    },
+    {
+      "boundary_note": "The due-north line from the St. Croix source was surveyed and marked in 1817–1818 and is drawn as documented. The rival 'highlands' interpretations and the disputed zone between them are approximate — the highlands' identity was precisely what was disputed — and are labeled as rival claims, not a settled line. Southern and western boundaries follow the 1691 charter limits (Piscataqua to St. Croix), shown by the modern state outline.",
+      "date_label": "September 3, 1783 – March 15, 1820",
+      "description": "The 1783 Treaty of Paris defined the U.S.–British boundary from the source of the St. Croix River due north to the 'highlands' dividing St. Lawrence and Atlantic watersheds, then along those highlands to the northwesternmost head of the Connecticut River. The negotiators attached no map and the 'highlands' were never clearly identified, leaving roughly 7.7 million acres of northern Maine in dispute between rival American and British interpretations. Maine remained the District of Massachusetts throughout this period.",
+      "end_year": 1820,
+      "id": "paris-boundary-dispute",
+      "label": "Treaty of Paris Boundary Dispute",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              47.62,
+              -67.75
+            ]
+          ],
+          "label": "Due-north line from the St. Croix source (surveyed 1817–1818)",
+          "note": "From the source monument at the Chiputneticook Lakes north to the St. John River, per the 1794 treaty commission.",
+          "style": {
+            "color": "#1e3a8a",
+            "weight": 2.5
+          },
+          "type": "polyline"
+        },
+        {
+          "coords": [
+            [
+              47.62,
+              -67.75
+            ],
+            [
+              47.9,
+              -68.6
+            ],
+            [
+              47.5,
+              -69.6
+            ],
+            [
+              46.8,
+              -69.6
+            ],
+            [
+              46.3,
+              -68.8
+            ],
+            [
+              46.5,
+              -67.9
+            ]
+          ],
+          "label": "Disputed zone — rival U.S./British 'highlands' interpretations, ~7.7 million acres (approximate)",
+          "note": "Approximate. American surveyors placed the treaty 'highlands' north of the St. John; British surveyors placed them south of it.",
+          "style": {
+            "color": "#c2410c",
+            "dashArray": "8 5",
+            "fillColor": "#ea580c",
+            "fillOpacity": 0.2,
+            "weight": 2
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              46.3,
+              -69.6
+            ],
+            [
+              46.5,
+              -68.6
+            ],
+            [
+              46.8,
+              -67.9
+            ]
+          ],
+          "label": "British 'highlands' interpretation (approximate, dashed)",
+          "note": "Approximate southerly highlands line per the British interpretation.",
+          "style": {
+            "color": "#7c2d12",
+            "dashArray": "6 5",
+            "weight": 2
+          },
+          "type": "polyline"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Treaty of Paris (1783) — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Treaty_of_Paris_(1783)"
+        },
+        {
+          "label": "Treaty of Paris, full text — Avalon Project, Yale",
+          "url": "https://avalon.law.yale.edu/18th_century/paris.asp"
+        },
+        {
+          "label": "The Mitchell Map in Paris — Osher Map Library",
+          "url": "https://oshermaps.org/special-map-exhibits/the-mitchell-map-1755-1782-an-irony-of-empire/iv-the-mitchell-map-in-paris"
+        },
+        {
+          "label": "District of Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/District_of_Maine"
+        }
+      ],
+      "start_year": 1783
+    },
+    {
+      "boundary_note": "The state's southern and western boundaries are the modern settled lines. The northern boundary is shown as the disputed zone between the two rival claim lines — no single settled northern line is drawn for this era.",
+      "date_label": "March 15, 1820 – August 9, 1842",
+      "description": "Maine entered the Union as the 23rd state on March 15, 1820, under the Missouri Compromise, which admitted Maine as a free state alongside Missouri as a slave state. The northeastern boundary with New Brunswick remained unsettled, and rival Maine and New Brunswick timber operations in the disputed zone sparked the Aroostook 'War' of 1838–1839 — so called rhetorically; militias mobilized but never engaged in actual combat.",
+      "end_year": 1842,
+      "id": "state-disputed-north",
+      "label": "State of Maine (Disputed North)",
+      "layers": [
+        {
+          "type": "polygon",
+          "label": "Wabanaki homeland (approximate) — Indigenous presence and sovereignty persisted",
+          "coords": [
+            [
+              48.6,
+              -66.5
+            ],
+            [
+              47.8,
+              -64.3
+            ],
+            [
+              46.4,
+              -64.0
+            ],
+            [
+              44.9,
+              -64.6
+            ],
+            [
+              43.7,
+              -66.2
+            ],
+            [
+              42.7,
+              -69.6
+            ],
+            [
+              42.7,
+              -71.8
+            ],
+            [
+              43.6,
+              -73.2
+            ],
+            [
+              45.1,
+              -73.4
+            ],
+            [
+              46.6,
+              -72.3
+            ],
+            [
+              47.9,
+              -70.3
+            ],
+            [
+              48.6,
+              -68.0
+            ]
+          ],
+          "style": {
+            "color": "#7c3aed",
+            "weight": 1,
+            "dashArray": "4 6",
+            "fillColor": "#7c3aed",
+            "fillOpacity": 0.06
+          },
+          "note": "Approximate. European and American claims overlapped Indigenous territory; Wabanaki presence, control, and resistance continued throughout the colonial period and to the present day."
+        },
+        {
+          "coords": [
+            [
+              45.67,
+              -67.75
+            ],
+            [
+              47.62,
+              -67.75
+            ]
+          ],
+          "label": "Due-north line from the St. Croix source (surveyed 1817–1818)",
+          "note": "From the source monument at the Chiputneticook Lakes north to the St. John River.",
+          "style": {
+            "color": "#1e3a8a",
+            "weight": 2.5
+          },
+          "type": "polyline"
+        },
+        {
+          "coords": [
+            [
+              47.62,
+              -67.75
+            ],
+            [
+              47.9,
+              -68.6
+            ],
+            [
+              47.5,
+              -69.6
+            ],
+            [
+              46.8,
+              -69.6
+            ],
+            [
+              46.3,
+              -68.8
+            ],
+            [
+              46.5,
+              -67.9
+            ]
+          ],
+          "label": "Disputed zone — rival U.S./British claims, ~7.7 million acres (approximate)",
+          "note": "Approximate. Timber operations by both sides in this zone sparked the Aroostook confrontation of 1838–1839.",
+          "style": {
+            "color": "#c2410c",
+            "dashArray": "8 5",
+            "fillColor": "#ea580c",
+            "fillOpacity": 0.2,
+            "weight": 2
+          },
+          "type": "polygon"
+        },
+        {
+          "coords": [
+            [
+              46.3,
+              -69.6
+            ],
+            [
+              46.5,
+              -68.6
+            ],
+            [
+              46.8,
+              -67.9
+            ]
+          ],
+          "label": "British 'highlands' interpretation (approximate, dashed)",
+          "note": "Approximate southerly highlands line per the British interpretation.",
+          "style": {
+            "color": "#7c2d12",
+            "dashArray": "6 5",
+            "weight": 2
+          },
+          "type": "polyline"
+        }
+      ],
+      "sources": [
+        {
+          "label": "Maine — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Maine"
+        },
+        {
+          "label": "Missouri Compromise — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Missouri_Compromise"
+        },
+        {
+          "label": "Aroostook War — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Aroostook_War"
+        }
+      ],
+      "start_year": 1820
+    },
+    {
+      "boundary_note": "The Webster–Ashburton line is the documented, settled northern boundary — the solid state outline shown on the map. Article I traces it from the St. Croix source monument north to the St. John, up the St. John and St. Francis to Lake Pohenegamook, then via survey lines to the highlands and down Hall's Stream to the 45th parallel.",
+      "date_label": "August 9, 1842 – present",
+      "description": "The Webster–Ashburton Treaty, signed August 9, 1842, in Washington, D.C., by Daniel Webster and Lord Ashburton, fixed the Maine–New Brunswick boundary and ended the 59-year dispute. It awarded most of the disputed territory to Maine while preserving an overland British connection between Lower Canada and the Maritime colonies. Maine's boundaries have been unchanged since. The Wabanaki nations — Penobscot, Passamaquoddy, Mi'kmaq, and Wolastoqiyik — persist in Maine today; the Wabanaki Confederacy was revived in 1993.",
+      "end_year": null,
+      "id": "state-modern",
+      "label": "State of Maine",
+      "layers": [],
+      "sources": [
+        {
+          "label": "Webster–Ashburton Treaty — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Webster-Ashburton_Treaty"
+        },
+        {
+          "label": "Webster–Ashburton Treaty, full text — Wikisource",
+          "url": "https://en.wikisource.org/wiki/Webster-Ashburton_Treaty"
+        },
+        {
+          "label": "Aroostook War — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Aroostook_War"
+        }
+      ],
+      "start_year": 1842
+    }
+  ],
+  "note": "Territorial boundary/claim eras for the Maine Historical Atlas time slider. Coordinates are [lat, lng], matching sites.json convention. Every layer is labeled as either a surveyed/settled line or an APPROXIMATE reconstruction / paper claim — approximate geometry is never presented as a precise boundary. Sources verified September 2026.",
+  "slider_note": "The in-app date slider operates at whole-year granularity, while some transitions have exact mid-year dates (Treaty of Paris, September 3 1783; Maine statehood, March 15 1820; Webster-Ashburton Treaty, August 9 1842). The eras' start_year/end_year boundaries are inclusive, so the slider assigns 1783 to the Massachusetts era, 1820 to the Treaty of Paris dispute era, and 1842 to the disputed-north era. Era descriptions carry the exact dates; the slider cannot distinguish months within a year."
+}

@@ -9,6 +9,14 @@
       "summary": "European sailors charted the Maine coast in the early 1500s: Giovanni da Verrazzano sailed it in 1524 and Estêvão Gomes mapped it in 1525. Samuel de Champlain's surveys of 1604–05 named landmarks including Mount Desert Island. The era closes with the first permanent French and English settlement attempts at Saint Croix Island (1604) and Popham (1607)."
     },
     {
+      "id": "wabanaki-heritage",
+      "label": "Wabanaki Heritage",
+      "start_year": null,
+      "end_year": null,
+      "color": "#7c3aed",
+      "summary": "The Wabanaki peoples — Mi'kmaq, Wolastoqiyik (Maliseet), Passamaquoddy, Penobscot, and Abenaki — have called this land Wabanaki, 'Dawnland,' since time immemorial. This era gathers pre-contact cultures, the Wabanaki Confederacy, colonial-era treaties and conflicts involving the Dawnland nations, and the modern tribal sovereignty movement."
+    },
+    {
       "color": "#5f7a5a",
       "end_year": 1675,
       "id": "early-settlement",
@@ -970,6 +978,157 @@
         "kennebec",
         "trading-post"
       ]
+    },
+    {
+      "id": "battle-pequawket",
+      "name": "Battle of Pequawket (Lovewell's Fight)",
+      "lat": 44.021,
+      "lng": -70.936,
+      "era": "dummers-war",
+      "start_year": 1725,
+      "end_year": 1725,
+      "date_display": "May 9, 1725 (O.S.)",
+      "kind": "battle",
+      "summary": "Fought on May 9, 1725 (O.S.) at Pequawket, present-day Fryeburg, Maine, between Captain John Lovewell's company and Abenaki led by Chief Paugus. It was the last major engagement of Dummer's War between New England and the Wabanaki Confederacy, and it became a celebrated part of regional lore for generations.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Battle_of_Pequawket",
+      "tags": [
+        "wabanaki",
+        "dummers-war"
+      ]
+    },
+    {
+      "id": "treaty-casco-1678",
+      "name": "Treaty of Casco (1678)",
+      "lat": 43.74722222,
+      "lng": -70.25916667,
+      "era": "king-philips-war",
+      "start_year": 1678,
+      "end_year": 1678,
+      "date_display": "1678",
+      "kind": "treaty",
+      "summary": "The treaty that brought to a close the war between the Indigenous Dawnland nations and the English settlers, ending the Maine fighting of King Philip's War. No copies of the treaty or its proceedings survive, so historians rely on a summary by Jeremy Belknap in his 1784 History of New Hampshire. Coordinates are those of Falmouth (present-day New Casco), the documented treaty area.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Treaty_of_Casco_(1678)",
+      "tags": [
+        "wabanaki",
+        "treaty"
+      ]
+    },
+    {
+      "id": "treaty-casco-1703",
+      "name": "Treaty of Casco (1703)",
+      "lat": 43.74722222,
+      "lng": -70.25916667,
+      "era": "queen-annes-war",
+      "start_year": 1703,
+      "end_year": 1703,
+      "date_display": "June 20, 1703",
+      "kind": "treaty",
+      "summary": "On June 20, 1703, Governor Joseph Dudley met chiefs at New Casco (present-day Falmouth, Maine) to head off renewed hostilities; the Indians professed peace, presented a wampum belt, and ended the ceremony with an exchange of volleys. Alarmed at losing influence in Acadia, the French instigated the Abenaki raids that struck the frontier from Casco to Wells that August.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Treaty_of_Casco_(1703)",
+      "tags": [
+        "wabanaki",
+        "treaty"
+      ]
+    },
+    {
+      "id": "treaty-portsmouth-1713",
+      "name": "Treaty of Portsmouth (1713)",
+      "lat": 43.05805556,
+      "lng": -70.7825,
+      "era": "queen-annes-war",
+      "start_year": 1713,
+      "end_year": 1713,
+      "date_display": "July 13, 1713",
+      "kind": "treaty",
+      "summary": "Signed on July 13, 1713, it ended hostilities between the Eastern Abenakis and the British provinces of Massachusetts Bay and New Hampshire after Queen Anne's War. The agreement renewed a 1693 treaty the tribes had made with Governor Sir William Phips. Signed at Portsmouth, New Hampshire.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Treaty_of_Portsmouth_(1713)",
+      "tags": [
+        "wabanaki",
+        "treaty"
+      ]
+    },
+    {
+      "id": "wabanaki-confederacy",
+      "name": "Wabanaki Confederacy",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": 1680,
+      "end_year": 1689,
+      "date_display": "1680s",
+      "kind": "other",
+      "summary": "A confederation of five principal Eastern Algonquian nations — the Abenaki, Mi'kmaq, Wolastoqiyik, Passamaquoddy, and Penobscot — known as the People of the Dawn. It formed in the 1680s, shaped a century of colonial wars in Maine, and was revived in 1993. No single mappable location: the confederacy spans present-day Maine, New Hampshire, Vermont, New Brunswick, Nova Scotia, and parts of Quebec.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Wabanaki_Confederacy",
+      "tags": [
+        "wabanaki"
+      ]
+    },
+    {
+      "id": "tarratine-wars",
+      "name": "The Tarratine Wars",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": 1607,
+      "end_year": 1631,
+      "date_display": "1607–1631",
+      "kind": "battle",
+      "summary": "A sporadic 25-year armed conflict between the Mi'kmaq confederacy and members and allies of the Abenaki confederacy in early-17th-century coastal Maine. Fighting ran from about 1607 to the last reported attack on August 8, 1631, and the southern campaigns exposed the attackers to the 1616–1619 epidemic. 'Tarratine' was the English colonists' term for the Indigenous peoples involved; the article title is retained for the Wikipedia link. No single battle site: the conflict ranged across coastal Maine and the Maritimes.",
+      "wikipedia": "https://en.wikipedia.org/wiki/The_Tarratine_Wars",
+      "tags": [
+        "wabanaki"
+      ]
+    },
+    {
+      "id": "red-paint-people",
+      "name": "Red Paint People (Maritime Archaic culture)",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": -7000,
+      "end_year": -3500,
+      "date_display": "c. 7000–3500 BCE",
+      "kind": "other",
+      "summary": "A pre-Columbian culture of New England and Atlantic Canada, probably a subset of the Maritime Archaic complex, named for burials covered in large quantities of red ochre — 'Red Paint People' is the older popular term for this archaeological culture. The first scientific examination of the graves was undertaken in 1892 by Charles Willoughby of Harvard's Peabody Museum. Burial sites are spread across the region with no single location.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Red_Paint_People",
+      "tags": [
+        "wabanaki",
+        "archaeology"
+      ]
+    },
+    {
+      "id": "goddard-site",
+      "name": "Goddard Site",
+      "lat": 44.27527778,
+      "lng": -68.55944444,
+      "era": "wabanaki-heritage",
+      "start_year": 1979,
+      "end_year": 1979,
+      "date_display": "Prehistoric site · National Register listed 1979",
+      "kind": "other",
+      "summary": "A prehistoric archaeological site in Brooklin, Maine, notable for stone artifacts sourced far from the area and for worked copper objects. It is the find site of the controversial so-called 'Maine penny,' a Norse coin from the reign of Olaf Kyrre (1067–1093) whose significance for pre-Columbian contact is debated by scholars; the site's primary importance is as a significant Indigenous archaeological site. It was listed on the National Register of Historic Places in 1979. Coordinates are those of Brooklin, Maine.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Goddard_Site",
+      "tags": [
+        "wabanaki",
+        "archaeology"
+      ]
+    },
+    {
+      "id": "joint-tribal-council-v-morton",
+      "name": "Joint Tribal Council of the Passamaquoddy Tribe v. Morton",
+      "lat": null,
+      "lng": null,
+      "era": "wabanaki-heritage",
+      "start_year": 1975,
+      "end_year": 1975,
+      "date_display": "1975",
+      "kind": "other",
+      "summary": "A 1975 First Circuit decision holding that the Nonintercourse Act applied to the Passamaquoddy and Penobscot, establishing a federal trust relationship that the State of Maine could not terminate. It cleared the way for tribal land claims covering about 60 percent of Maine and led to the 1980 Maine Indian Claims Settlement Act, which allocated $81.5 million to the tribes. A court decision with no single geographic location.",
+      "wikipedia": "https://en.wikipedia.org/wiki/Joint_Tribal_Council_of_the_Passamaquoddy_Tribe_v._Morton",
+      "tags": [
+        "wabanaki",
+        "sovereignty"
+      ]
     }
   ],
   "settlement_shading": [
@@ -1024,7 +1183,7 @@
           -70.75
         ]
       ],
-      "note": "Approximate. A narrow coastal strip from York to Pemaquid; the interior remained Wabanaki territory / uncontrolled by colonists."
+      "note": "Approximate. A narrow coastal strip from York to Pemaquid; the interior remained under Wabanaki control."
     },
     {
       "id": "contested-valleys-1725",
@@ -1134,13 +1293,13 @@
           -70.75
         ]
       ],
-      "note": "Approximate. British forts secured the Kennebec and Penobscot valleys, but much of the interior remained uncontrolled Wabanaki territory."
+      "note": "Approximate. British forts secured the Kennebec and Penobscot valleys, but much of the interior remained under Wabanaki control."
     },
     {
-      "id": "uncontrolled-north-1840",
-      "label": "Disputed / uncontrolled northern Maine by ~1840 (approximate)",
+      "id": "disputed-north-1840",
+      "label": "Disputed northern Maine by ~1840 (approximate)",
       "era": "early-statehood",
-      "status": "uncontrolled",
+      "status": "disputed",
       "polygon": [
         [
           46.3,
@@ -1171,7 +1330,7 @@
           -69.9
         ]
       ],
-      "note": "Approximate. Northern Maine was claimed by both the US and Britain (the Aroostook dispute); settled by lumbermen but not firmly controlled until the 1842 Webster–Ashburton Treaty."
+      "note": "Approximate. Northern Maine was claimed by both the US and Britain (the Aroostook dispute); worked by lumbermen from both sides, but its sovereignty was unsettled until the 1842 Webster–Ashburton Treaty."
     },
     {
       "id": "settled-state-1860",
