@@ -300,23 +300,91 @@
     });
   }
 
-  function fail(msg) {
+  // ---- Data loading: bounded auto-retry + visitor-facing fallback ----
+  //
+  // History (OPS-128): any load failure used to surface the developer note
+  // "Serve this folder over HTTP (e.g. `python3 -m http.server`) — browsers
+  // block local file reads." to every visitor, with no way to retry. The
+  // message also blamed the data files even when the actual failure was the
+  // Leaflet CDN script (initMap threw on an undefined L inside the same
+  // promise chain). The loader below retries transient failures, checks for
+  // Leaflet explicitly so the real cause reaches the console, and on final
+  // failure shows plain-language copy with a Try again button.
+
+  var LOAD_ATTEMPTS = 3;
+  var LOAD_RETRY_DELAYS_MS = [800, 2000]; // wait before attempts 2 and 3
+
+  function delay(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  function fetchJson(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error(url + ': HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  function loadData() {
+    if (typeof L === 'undefined') {
+      return Promise.reject(new Error('Leaflet failed to load (window.L is undefined)'));
+    }
+    return Promise.all([
+      fetchJson(DATA_URL),
+      fetchJson(BOUNDARY_URL),
+      fetchJson(BOUNDARY_ERAS_URL)
+    ]);
+  }
+
+  function attemptLoad(attempt) {
+    return loadData().catch(function (err) {
+      if (window.console) console.error('Atlas load attempt ' + attempt + ' of ' + LOAD_ATTEMPTS + ' failed:', err);
+      if (attempt >= LOAD_ATTEMPTS) throw err;
+      return delay(LOAD_RETRY_DELAYS_MS[attempt - 1]).then(function () {
+        return attemptLoad(attempt + 1);
+      });
+    });
+  }
+
+  function showLoadError() {
     var mapDiv = document.getElementById('map');
-    mapDiv.innerHTML = '<div style="padding:2rem;font-family:sans-serif">' +
-      '<h2>Couldn\u2019t load the atlas data</h2><p>' + esc(msg) + '</p></div>';
+    mapDiv.innerHTML = '';
+    var box = el('div', 'map-error');
+    box.setAttribute('role', 'alert');
+    box.appendChild(el('h2', 'map-error-title', 'The map couldn\u2019t load'));
+    box.appendChild(el('p', 'map-error-text',
+      'We\u2019re sorry \u2014 the atlas couldn\u2019t load its map information just now. ' +
+      'This is usually a brief connection problem. Check your connection, then try again.'));
+    var btn = el('button', 'map-error-retry', 'Try again');
+    btn.type = 'button';
+    btn.addEventListener('click', function () {
+      // If the map library itself never arrived, only a fresh page load can
+      // fetch it; otherwise just re-run the data load.
+      if (typeof L === 'undefined') {
+        window.location.reload();
+      } else {
+        startLoad();
+      }
+    });
+    box.appendChild(btn);
+    mapDiv.appendChild(box);
+  }
+
+  function startLoad() {
+    var mapDiv = document.getElementById('map');
+    mapDiv.innerHTML = '';
+    mapDiv.appendChild(el('p', 'map-loading', 'Loading the atlas\u2026'));
+    attemptLoad(1).then(function (results) {
+      mapDiv.innerHTML = '';
+      initMap(results[0], results[1], results[2]);
+    }).catch(function (err) {
+      if (window.console) console.error('Atlas failed to load after ' + LOAD_ATTEMPTS + ' attempts:', err);
+      showLoadError();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     initPanelToggle();
-    Promise.all([
-      fetch(DATA_URL).then(function (r) { if (!r.ok) throw new Error('sites.json: ' + r.status); return r.json(); }),
-      fetch(BOUNDARY_URL).then(function (r) { if (!r.ok) throw new Error('maine-boundary.geojson: ' + r.status); return r.json(); }),
-      fetch(BOUNDARY_ERAS_URL).then(function (r) { if (!r.ok) throw new Error('boundary-eras.json: ' + r.status); return r.json(); })
-    ]).then(function (results) {
-      initMap(results[0], results[1], results[2]);
-    }).catch(function (err) {
-      fail('The data files could not be loaded. Serve this folder over HTTP (e.g. `python3 -m http.server`) — browsers block local file reads.');
-      if (window.console) console.error(err);
-    });
+    startLoad();
   });
 })();
